@@ -78,9 +78,12 @@ if selected == "Explore Trust Graph":
                     adj_matrix.at[source, target] = value
 
                 # Assuming process_data_for_visualization returns nodes and links formatted for d3graph
-                d3 = d3graph()
+                d3 = d3graph(collision=1, charge=250)
                 # Convert nodes and links as needed
                 d3.graph(adj_matrix)  # Adjust as per the actual API of d3graph
+                d3.set_edge_properties(edge_distance=1000)
+                d3.set_node_properties(size=10)
+                d3.set_link_properties(width=1)
                 d3.show()
             else:
                 st.error("Please select a trust relationship type.")
