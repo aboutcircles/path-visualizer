@@ -11,6 +11,10 @@ streamlit-option-menu = "*"
 python-dotenv = "*"
 streamlit-d3graph = "*"
 watchdog = "*"
+asyncio = "*"
+aiohttp = "*"
+requests = "*"
+scikit-learn = "*"
 
 [dev-packages]
 
