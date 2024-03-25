@@ -38,7 +38,7 @@ class Pathfinder:
         if response.status_code == 200:
 
             parsed = response.json()
-            print(parsed)  # Add this line to inspect the structure of the response
+            print(parsed)  
         else:
             print(f"Error calling API: {response.status_code}")
             return [], [], [], [], 0  # Handle the error by returning empty lists and 0 capacity
@@ -143,7 +143,6 @@ class Pathfinder:
             # Use the instance of JSONRPCClient to call circles_get_trust_relations
             result = self.json_rpc_client.circles_get_trust_relations(address)
 
-            # Assuming the result is a dictionary that you want to print or process
             print(result)
             return result
 
