@@ -16,9 +16,9 @@ class UserDataStore:
         for callback in self._subscribers:
             callback(self._user_data)
 
-    async def update_user_data(self, addresses):
+    def update_user_data(self, addresses):
         """Fetch user data for given addresses and update the store."""
-        fetched_data = await CirclesAPI.fetch_user_data(addresses)
+        fetched_data = CirclesAPI.fetch_user_data(addresses)
         if fetched_data is not None:
             self._user_data = fetched_data
             self.notify_subscribers()
