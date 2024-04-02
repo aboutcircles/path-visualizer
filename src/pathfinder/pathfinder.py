@@ -1,15 +1,14 @@
-import json
-import math
 import os
-import plotly.graph_objects as go
 import requests
 import web3
-import subprocess
 
 from dotenv import load_dotenv
 from hubAbi import hub_abi
 from tokenAbi import token_abi
 from utils.http.json_rpc_client import JSONRPCClient
+from utils.http.circles_api.circles_api import CirclesAPI
+
+CirclesAPI = CirclesAPI()
 
 load_dotenv()
 class Pathfinder:
@@ -57,63 +56,10 @@ class Pathfinder:
             print("Error or unexpected response structure:", parsed)
             return [], [], [], [], 0
 
-    def get_sankey(self, tokenOwner, srcs, dests, wads):
-        address_index_map = {}
-        safe_list = []
-        j = 0
-        for i in range(len(srcs)):
-            if not srcs[i] in address_index_map.keys():
-                address_index_map[srcs[i]] = j
-                safe_list.append(srcs[i])
-                j += 1
-
-        for i in range(len(dests)):
-            if not dests[i] in address_index_map.keys():
-                address_index_map[dests[i]] = j
-                safe_list.append(dests[i])
-                j += 1
-
-        source_ = []
-        target_ = []
-        value_ = []
-        for i in range(len(srcs)):
-            source_.append(address_index_map[srcs[i]])
-            target_.append(address_index_map[dests[i]])
-            value_.append(wads[i] / 10 ** 18)
-
-        labels = self.get_names(safe_list)
-        flow_labels = self.get_names(tokenOwner)
-        flow_labels = [i + " CRC" for i in flow_labels]
-
-        return source_, target_, value_, flow_labels, labels
-
-    @staticmethod
-    def get_names(safes):
-        safes = [web3.Web3.to_checksum_address(i) for i in safes]
-        return_list = safes.copy()
-        bulk = 100
-        for k in range(math.ceil((len(safes) / bulk))):
-
-            current = safes[k * bulk:(k + 1) * bulk]
-
-            query = "?"
-            for i in current:
-                query = query + "address[]=" + i + "&"
-            query = "https://api.circles.garden/api/users/" + query
-
-            response = requests.get(query)
-            parsed = json.loads(response.content)
-
-            for i in parsed['data']:
-                for j in range(len(current)):
-                    if current[j] == i["safeAddress"]:
-                        return_list[j + k * bulk] = i["username"]
-        return return_list
 
     @staticmethod
     def sort_args(token_owner, srcs, dests, wads):
         tokenOwner_ = []
-        srcs_ = []
         dests_ = []
         wads_ = []
 
@@ -143,7 +89,7 @@ class Pathfinder:
             # Use the instance of JSONRPCClient to call circles_get_trust_relations
             result = self.json_rpc_client.circles_get_trust_relations(address)
 
-            print(result)
+            # print(result)
             return result
 
         except Exception as e:
@@ -218,26 +164,3 @@ class Pathfinder:
                         return user["safeAddress"]
         return None
 
-    def draw_sankey(self, source_, target_, value_, flow_labels, labels, colors=None):
-        if colors is None:
-            colors = ["rgba(169, 169, 169,0.7)"] * len(flow_labels)
-
-        data = [go.Sankey(
-            node=dict(
-                pad=15,
-                thickness=20,
-                line=dict(color="black", width=0.5),
-                label=labels,
-                color=["blue"] * len(labels)
-            ),
-            link=dict(
-                source=source_,
-                target=target_,
-                value=value_,
-                label=flow_labels,
-                color=colors
-            ))]
-
-        fig = go.Figure(data)
-        fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
-        return fig
