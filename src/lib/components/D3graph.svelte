@@ -32,7 +32,7 @@
 					border: '#406897',
 					background: '#6AAFFF'
 				},
-				font: { color: '#eeeeee' },
+				font: { color: 'black' },
 				shapeProperties: {
 					useBorderWithImage: true
 				}
