@@ -25,9 +25,18 @@ export class SankeyChart {
   private async getNames(safes: string[]): Promise<Record<string, string>> {
     const userData = await CirclesAPI.fetchUserData(safes);
     const namesDict: Record<string, string> = {};
+
     userData.forEach((user: UserData) => {
-      namesDict[user.id] = user.username || user.id;
+      namesDict[user.safeAddress] = user.username || user.safeAddress;
     });
+
+
+    safes.forEach(safeAddress => {
+      if (!namesDict[safeAddress]) {
+        namesDict[safeAddress] = safeAddress;
+      }
+    });
+
     return namesDict;
   }
 
@@ -35,9 +44,8 @@ export class SankeyChart {
     const pathData = await this.pathfinder.getArgsForPath(sourceAddress, sinkAddress, amount);
     const transfers = pathData.data?.directPath?.transfers || [];
 
-    // Here's the key adjustment: Convert Set to Array right away
     const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
-    const uniqueAddresses = Array.from(addressSet); // Convert Set to Array
+    const uniqueAddresses = Array.from(addressSet);
 
     const namesDict = await this.getNames(uniqueAddresses);
 
@@ -46,7 +54,7 @@ export class SankeyChart {
       source: uniqueAddresses.indexOf(transfer.from),
       target: uniqueAddresses.indexOf(transfer.to),
       value: parseInt(ethers.formatEther(transfer.value)),
-      label: `${namesDict[transfer.tokenOwner]} CRC`,
+      label: namesDict[transfer.tokenOwner] || transfer.tokenOwner,
     }));
 
     return { nodes, links };

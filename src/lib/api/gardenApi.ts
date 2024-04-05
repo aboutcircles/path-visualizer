@@ -4,7 +4,7 @@ export interface UserData {
   id: string;
   username: string;
   avatarUrl?: string;
-  safeAddress?: string;
+  safeAddress: string;
 }
 
 interface ApiResponse {

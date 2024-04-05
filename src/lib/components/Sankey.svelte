@@ -10,8 +10,7 @@
 	const value = writable('');
 	const isLoading = writable(false);
 
-	// Initialize your Pathfinder URL and SankeyChart with the URL
-	const pathfinderURL = 'http://localhost:5173/api';
+	const pathfinderURL = '/api';
 	const sankeyChart = new SankeyChart(pathfinderURL);
 
 	async function handleSubmit() {
@@ -20,7 +19,6 @@
 		let sinkAddress = $toAddress;
 		const amount: string = $value;
 
-		// Resolve usernames to addresses if necessary
 		if (!sourceAddress.startsWith('0x')) {
 			sourceAddress = (await CirclesAPI.resolveUsernameToAddress(sourceAddress)) || '';
 		}
@@ -30,6 +28,7 @@
 
 		try {
 			const sankeyData = await sankeyChart.generateSankeyData(sourceAddress, sinkAddress, amount);
+			console.log('Sankey data:', sankeyData);
 			drawChart(sankeyData);
 		} catch (error) {
 			console.error('Failed to generate Sankey data:', error);

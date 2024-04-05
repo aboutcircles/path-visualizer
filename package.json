@@ -43,8 +43,9 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"plotly.js-dist-min": "^2.30.1",
 		"axios": "^1.6.8",
-    "ethers": "^6.11.1"
+		"ethers": "^6.11.1",
+		"plotly.js-dist-min": "^2.30.1",
+		"vis-network": "^9.1.9"
 	}
 }
