@@ -10,7 +10,7 @@ interface SankeyNode {
 interface SankeyLink {
   source: number;
   target: number;
-  value: number;
+  value: string;
   label?: string;
   color?: string;
 }
@@ -44,6 +44,8 @@ export class SankeyChart {
     const pathData = await this.pathfinder.getArgsForPath(sourceAddress, sinkAddress, amount);
     const transfers = pathData.data?.directPath?.transfers || [];
 
+    console.log("transfers", transfers)
+
     const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
     const uniqueAddresses = Array.from(addressSet);
 
@@ -53,7 +55,7 @@ export class SankeyChart {
     const links: SankeyLink[] = transfers.map(transfer => ({
       source: uniqueAddresses.indexOf(transfer.from),
       target: uniqueAddresses.indexOf(transfer.to),
-      value: parseInt(ethers.formatEther(transfer.value)),
+      value: (ethers.formatEther(transfer.value)).toString(),
       label: namesDict[transfer.tokenOwner] || transfer.tokenOwner,
     }));
 

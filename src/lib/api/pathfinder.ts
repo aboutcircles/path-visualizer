@@ -67,6 +67,8 @@ export class Pathfinder {
         }
       };
 
+      console.log("transformedResponse", transformedResponse);
+
       return transformedResponse;
     } catch (error) {
       if (error instanceof Error) {
