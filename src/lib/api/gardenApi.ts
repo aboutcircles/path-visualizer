@@ -40,6 +40,8 @@ export class CirclesAPI {
       }
     }
 
+    console.log("allUserData", allUserData)
+
     return allUserData;
   }
 

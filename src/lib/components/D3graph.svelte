@@ -39,7 +39,22 @@
 			},
 			edges: {
 				color: 'lightgray'
+			},
+			physics: {
+				stabilization: true, // Adjusted to true for initial stabilization
+				barnesHut: {
+					gravitationalConstant: -4000,
+					centralGravity: 1,
+					springLength: 1,
+					springConstant: 0.01,
+					damping: 0.2,
+					avoidOverlap: 0.1
+				},
+				solver: 'barnesHut'
 			}
+			// layout: {
+			// 	improvedLayout: false // Disabling the improved layout algorithm
+			// }
 		};
 
 		if (container) {

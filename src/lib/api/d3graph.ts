@@ -1,10 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ethers } from "ethers";
 import { CirclesAPI } from "./gardenApi";
 import { RpcApi } from "./rpc";
+
+interface UserMap {
+  [address: string]: {
+    username: string;
+    avatarUrl: string;
+  };
+}
+
+interface UserData {
+  safeAddress: string;
+  username: string;
+  avatarUrl?: string;
+}
 
 export class D3Graph {
   private rpcApi: RpcApi;
   private sourceAddress: string;
+  private defaultAvatarUrl: string = "https://example.com/path/to/default/avatar.png";
 
   constructor(rpcUrl: string, sourceAddress: string) {
     this.rpcApi = new RpcApi(rpcUrl);
@@ -18,49 +33,45 @@ export class D3Graph {
   async fetchDataForNode(nodeAddress: string): Promise<{ nodes: any[], edges: any[] }> {
     try {
       const trustRelations = await this.rpcApi.getTrustRelations(nodeAddress);
-      const nodesMap = new Map<string, any>();
-      const edgesSet = new Set<string>();
+      const checksummedNodeAddress = ethers.getAddress(nodeAddress);
 
-      // Prepare the list of addresses to fetch avatar URLs for
-      const addresses = [nodeAddress, ...Object.keys({
-        ...trustRelations.result.trusts,
-        ...trustRelations.result.trustedBy
-      })];
+      // Ensure unique addresses
+      const addresses = new Set([checksummedNodeAddress]);
+      Object.keys(trustRelations.result.trusts).forEach(address => addresses.add(ethers.getAddress(address)));
+      Object.keys(trustRelations.result.trustedBy).forEach(address => addresses.add(ethers.getAddress(address)));
 
-      // Fetch avatar URLs for these addresses
-      // const avatarUrls = await CirclesAPI.getAllAvatarUrls(addresses);
+      // Fetch user data for these addresses
+      const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
 
-      // Add the source node
-      nodesMap.set(nodeAddress, {
-        id: nodeAddress,
+      // Create a map for quick lookup of username and avatar URL by address
+      const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
+        const checksumAddress = ethers.getAddress(user.safeAddress);
+        acc[checksumAddress] = {
+          username: user.username || checksumAddress, // Fallback to address if username is not provided
+          avatarUrl: user.avatarUrl || this.defaultAvatarUrl,
+        };
+        return acc;
+      }, {});
+
+      // Generate nodes
+      const nodes = Array.from(addresses).map(address => ({
+        id: address,
+        label: userMap[address]?.username || address,
         shape: "circularImage",
-        image: "path/to/default/avatar.png",
-        // image: avatarUrls.find(url => url.includes(nodeAddress)) || "path/to/default/avatar.png",
-        label: nodeAddress
-      });
+        image: userMap[address]?.avatarUrl || this.defaultAvatarUrl,
+      }));
 
-      for (const address of addresses) {
-        // Skip if already processed
-        if (address === nodeAddress || nodesMap.has(address)) continue;
-
-        // Add each node with its fetched avatar image
-        nodesMap.set(address, {
-          id: address,
-          shape: "circularImage",
-          image: "path/to/default/avatar.png",
-          // image: avatarUrls.find(url => url.includes(address)) || "path/to/default/avatar.png",
-          label: address
-        });
-
-        const edgeKey = [nodeAddress, address].sort().join('-');
-        edgesSet.add(edgeKey);
-      }
-
-      const nodes = Array.from(nodesMap.values());
-      const edges = Array.from(edgesSet).map(key => {
-        const [from, to] = key.split('-');
-        return { from, to };
-      });
+      // Generate edges based on trust relationships
+      const edges = [
+        ...Object.keys(trustRelations.result.trusts).map(trustedAddress => ({
+          from: checksummedNodeAddress,
+          to: ethers.getAddress(trustedAddress),
+        })),
+        ...Object.keys(trustRelations.result.trustedBy).map(trustingAddress => ({
+          from: ethers.getAddress(trustingAddress),
+          to: checksummedNodeAddress,
+        })),
+      ];
 
       return { nodes, edges };
     } catch (error) {
