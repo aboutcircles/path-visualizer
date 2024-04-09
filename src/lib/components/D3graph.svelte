@@ -3,8 +3,11 @@
 	import cytoscape from 'cytoscape';
 	import { D3Graph } from '$lib/api/d3graph';
 
-	let cy; // This will hold the Cytoscape instance
-	let container: HTMLElement;
+	let cy: cytoscape.Core | undefined;
+	let container: HTMLElement | null = null;
+	let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+	const clickDelay = 200; // 200 ms delay to differentiate single from double click
+	const expandedNodes = new Set<string>(); // Tracks expanded nodes
 
 	const layoutConfig = {
 		name: 'cose',
@@ -35,7 +38,6 @@
 		);
 		const initialData = await d3Graph.prepareDataForVisNetwork();
 
-		// Transform nodes and edges to the format expected by Cytoscape.js
 		const elements = initialData.nodes.map(node => ({
 			data: { id: node.id, label: node.label, image: node.image }
 		})).concat(initialData.edges.map(edge => ({
@@ -43,7 +45,7 @@
 		})));
 
 		cy = cytoscape({
-			container,
+			container: container!,
 			elements,
 			style: [
 				{
@@ -53,8 +55,8 @@
 						'label': 'data(label)',
 						'border-color': '#406897',
 						'border-width': 4,
-						'width': 30,
-						'height': 30,
+						'width': 'mapData(degree, 1, 10, 20, 50)', // Example mapping, adjust 1, 10 to your actual min/max degrees
+						'height': 'mapData(degree, 1, 10, 20, 50)', // Same here
 						'background-image': 'data(image)',
 						'background-fit': 'cover',
 						'text-valign': 'center',
@@ -77,24 +79,73 @@
 			layout: layoutConfig
 		});
 
-		cy.on('tap', 'node', async function(event) {
+		cy.on('tap', 'node', function(event) {
 			const nodeId = event.target.id();
-			await expandNode(nodeId, d3Graph);
+			toggleNodeExpansion(nodeId, d3Graph);
 		});
+
 	});
 
-	async function expandNode(nodeId: string, d3Graph: D3Graph) {
-		const { nodes: newNodes, edges: newEdges } = await d3Graph.fetchDataForNode(nodeId);
-		const elementsToAdd = newNodes.filter(node => cy.getElementById(node.id).length === 0)
-			.map(node => ({ group: 'nodes', data: { id: node.id, label: node.label, image: node.image } }))
-			.concat(newEdges.filter(edge => cy.getElementById(edge.id).length === 0)
-				.map(edge => ({ group: 'edges', data: { id: edge.id, source: edge.from, target: edge.to } })));
+	async function toggleNodeExpansion(nodeId: string, d3Graph: D3Graph) {
+		if (nodeShouldExpand(nodeId)) {
+			await expandNode(nodeId, d3Graph); // Implement or ensure this is defined
+		} else {
+			// collapseNode(nodeId);
+		}
+	}
 
-		cy.add(elementsToAdd);
-		applyLayout();
+	function nodeShouldExpand(nodeId: string): boolean {
+		return !expandedNodes.has(nodeId);
+	}
+
+	function selectNode(nodeId: string) {
+		console.log(`Node selected: ${nodeId}`);
+	}
+
+	async function expandNode(nodeId: string, d3Graph: D3Graph) {
+		// Assuming you need to fetch additional data for the node or related nodes
+		// from your D3Graph instance and then add these to the cytoscape instance.
+		try {
+			const additionalData = await d3Graph.fetchDataForNode(nodeId);
+
+			// Transform the additional data to Cytoscape's expected format
+			const newElements = additionalData.nodes.map(node => ({
+				data: { id: node.id, label: node.label, image: node.image }
+			})).concat(additionalData.edges.map(edge => ({
+				data: { id: edge.id, source: edge.from, target: edge.to }
+			})));
+
+			// Add the new elements to the cytoscape instance
+			cy.add(newElements);
+
+			// Optionally, mark the node as expanded to avoid re-expansion
+			expandedNodes.add(nodeId);
+
+			// Re-apply the layout to accommodate the new elements
+			applyLayout();
+		} catch (error) {
+			console.error('Failed to expand node:', error);
+		}
+	}
+
+	function collapseNode(nodeId: string) {
+		const connectedEdges = cy!.edges(`[source = "${nodeId}"], [target = "${nodeId}"]`);
+		const connectedNodes = connectedEdges.connectedNodes().subtract(cy!.$(`#${nodeId}`));
+
+		connectedEdges.remove();
+		connectedNodes.forEach(node => {
+			if (node.connectedEdges().length === 0) {
+				node.remove();
+			}
+		});
 	}
 
 	function applyLayout() {
+		// After initializing your graph with the elements
+		cy!.nodes().forEach(node => {
+			node.data('degree', node.degree());
+		});
+
 		cy.layout(layoutConfig).run();
 	}
 </script>
