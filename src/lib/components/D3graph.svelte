@@ -5,9 +5,7 @@
 
 	let cy: cytoscape.Core | undefined;
 	let container: HTMLElement | null = null;
-	let clickTimeout: ReturnType<typeof setTimeout> | null = null;
-	const clickDelay = 200; // 200 ms delay to differentiate single from double click
-	const expandedNodes = new Set<string>(); // Tracks expanded nodes
+	const expandedNodes = new Set<string>();
 
 	const layoutConfig = {
 		name: 'cose',
@@ -20,7 +18,7 @@
 		fit: true,
 		padding: 30,
 		randomize: false,
-		componentSpacing: 100,
+		componentSpacing: 200,
 		nodeRepulsion: 400000,
 		edgeElasticity: 100,
 		nestingFactor: 5,
@@ -36,10 +34,10 @@
 			'https://circles-rpc.circlesubi.id/',
 			'0xde374ece6fa50e781e81aac78e811b33d16912c7'
 		);
-		const initialData = await d3Graph.prepareDataForVisNetwork();
+		const initialData = await d3Graph.fetchDataForNode('0xde374ece6fa50e781e81aac78e811b33d16912c7');
 
 		const elements = initialData.nodes.map(node => ({
-			data: { id: node.id, label: node.label, image: node.image }
+			data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
 		})).concat(initialData.edges.map(edge => ({
 			data: { id: edge.id, source: edge.from, target: edge.to }
 		})));
@@ -81,6 +79,8 @@
 
 		cy.on('tap', 'node', function(event) {
 			const nodeId = event.target.id();
+			// Reset the addedAt timestamp to keep recently used items in the graph
+			event.target.data('addedAt', Date.now());
 			toggleNodeExpansion(nodeId, d3Graph);
 		});
 
@@ -88,9 +88,9 @@
 
 	async function toggleNodeExpansion(nodeId: string, d3Graph: D3Graph) {
 		if (nodeShouldExpand(nodeId)) {
-			await expandNode(nodeId, d3Graph); // Implement or ensure this is defined
+			await expandNode(nodeId, d3Graph);
 		} else {
-			// collapseNode(nodeId);
+			collapseNode(nodeId);
 		}
 	}
 
@@ -98,56 +98,68 @@
 		return !expandedNodes.has(nodeId);
 	}
 
-	function selectNode(nodeId: string) {
-		console.log(`Node selected: ${nodeId}`);
-	}
-
 	async function expandNode(nodeId: string, d3Graph: D3Graph) {
-		// Assuming you need to fetch additional data for the node or related nodes
-		// from your D3Graph instance and then add these to the cytoscape instance.
 		try {
 			const additionalData = await d3Graph.fetchDataForNode(nodeId);
+			let newElements = additionalData.nodes
+				.map(node => ({
+					data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
+				}))
+				.concat(additionalData.edges.map(edge => ({
+					data: { id: edge.id, source: edge.from, target: edge.to }
+				})));
 
-			// Transform the additional data to Cytoscape's expected format
-			const newElements = additionalData.nodes.map(node => ({
-				data: { id: node.id, label: node.label, image: node.image }
-			})).concat(additionalData.edges.map(edge => ({
-				data: { id: edge.id, source: edge.from, target: edge.to }
-			})));
+			// Efficiently filter out all 'newElements' that already exist in the graph
+			const existingNodes = new Set(cy.nodes().map(node => node.id()));
+			const existingEdges = new Set(cy.edges().map(edge => edge.id()));
+			newElements = newElements.filter(element =>
+				!existingNodes.has(element.data.id)
+				&& !existingEdges.has(element.data.id)
+			);
 
-			// Add the new elements to the cytoscape instance
 			cy.add(newElements);
 
-			// Optionally, mark the node as expanded to avoid re-expansion
+			// Remove all self references
+			cy.edges().forEach(edge => {
+				if (edge.source().id() === edge.target().id()) {
+					edge.remove();
+				}
+			});
+
 			expandedNodes.add(nodeId);
 
-			// Re-apply the layout to accommodate the new elements
 			applyLayout();
 		} catch (error) {
 			console.error('Failed to expand node:', error);
 		}
 	}
 
-	function collapseNode(nodeId: string) {
-		const connectedEdges = cy!.edges(`[source = "${nodeId}"], [target = "${nodeId}"]`);
-		const connectedNodes = connectedEdges.connectedNodes().subtract(cy!.$(`#${nodeId}`));
-
-		connectedEdges.remove();
-		connectedNodes.forEach(node => {
-			if (node.connectedEdges().length === 0) {
-				node.remove();
-			}
-		});
-	}
-
 	function applyLayout() {
-		// After initializing your graph with the elements
 		cy!.nodes().forEach(node => {
 			node.data('degree', node.degree());
 		});
 
 		cy.layout(layoutConfig).run();
 	}
+
+	function collapseNode(nodeId: string) {
+		const collapsingNode = cy.getElementById(nodeId);
+		const collapsingNodeNeighbours = collapsingNode.neighborhood().nodes();
+
+		collapsingNodeNeighbours.forEach(neighbor => {
+			const connectedEdges = neighbor.connectedEdges(edge => edge.source().id() !== nodeId && edge.target().id() !== nodeId);
+			if (connectedEdges.length == 0) {
+				if (neighbor == collapsingNode) {
+					return;
+				}
+				neighbor.remove();
+			}
+		});
+
+		expandedNodes.delete(nodeId);
+		applyLayout();
+	}
+
 </script>
 
 <div bind:this={container} class="w-full h-full"></div>

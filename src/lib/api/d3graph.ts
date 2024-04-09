@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ethers } from "ethers";
 import { CirclesAPI } from "./gardenApi";
 import { RpcApi } from "./rpc";
@@ -16,6 +15,19 @@ interface UserData {
   avatarUrl?: string;
 }
 
+interface Node {
+  id: string;
+  label: string;
+  shape: string;
+  image: string;
+}
+
+interface Edge {
+  id: string;
+  from: string;
+  to: string;
+}
+
 export class D3Graph {
   private rpcApi: RpcApi;
   private sourceAddress: string;
@@ -26,11 +38,7 @@ export class D3Graph {
     this.sourceAddress = sourceAddress;
   }
 
-  async prepareDataForVisNetwork(): Promise<{ nodes: any[], edges: any[] }> {
-    return this.fetchDataForNode(this.sourceAddress);
-  }
-
-  async fetchDataForNode(nodeAddress: string): Promise<{ nodes: any[], edges: any[] }> {
+  async fetchDataForNode(nodeAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
     try {
       const trustRelations = await this.rpcApi.getTrustRelations(nodeAddress);
       const checksummedNodeAddress = ethers.getAddress(nodeAddress);
@@ -64,10 +72,12 @@ export class D3Graph {
       // Generate edges based on trust relationships
       const edges = [
         ...Object.keys(trustRelations.result.trusts).map(trustedAddress => ({
+          id: `${checksummedNodeAddress}-${trustedAddress}`,
           from: checksummedNodeAddress,
           to: ethers.getAddress(trustedAddress),
         })),
         ...Object.keys(trustRelations.result.trustedBy).map(trustingAddress => ({
+          id: `${trustingAddress}-${checksummedNodeAddress}`,
           from: ethers.getAddress(trustingAddress),
           to: checksummedNodeAddress,
         })),
