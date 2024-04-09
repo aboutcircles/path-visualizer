@@ -1,97 +1,101 @@
 <script lang="ts">
-	import { D3Graph } from '$lib/api/d3graph';
 	import { onMount } from 'svelte';
-	import type { Data, Options, Network } from 'vis-network';
+	import cytoscape from 'cytoscape';
+	import { D3Graph } from '$lib/api/d3graph';
 
-	let network: Network;
+	let cy; // This will hold the Cytoscape instance
 	let container: HTMLElement;
-	let nodes: any[] = []; // Initialize nodes array
-	let edges: any[] = []; // Initialize edges array
+
+	const layoutConfig = {
+		name: 'cose',
+		animate: true,
+		animationEasing: 'ease-out',
+		animationDuration: 500,
+		idealEdgeLength: 100,
+		nodeOverlap: 20,
+		refresh: 20,
+		fit: true,
+		padding: 30,
+		randomize: false,
+		componentSpacing: 100,
+		nodeRepulsion: 400000,
+		edgeElasticity: 100,
+		nestingFactor: 5,
+		gravity: 80,
+		numIter: 1000,
+		initialTemp: 200,
+		coolingFactor: 0.95,
+		minTemp: 1.0
+	};
 
 	onMount(async () => {
-		const vis = await import('vis-network/standalone/esm/vis-network');
-
 		const d3Graph = new D3Graph(
 			'https://circles-rpc.circlesubi.id/',
 			'0xde374ece6fa50e781e81aac78e811b33d16912c7'
 		);
 		const initialData = await d3Graph.prepareDataForVisNetwork();
-		nodes = initialData.nodes; // Set initial nodes
-		edges = initialData.edges; // Set initial edges
 
-		const data: Data = {
-			nodes: nodes,
-			edges: edges
-		};
+		// Transform nodes and edges to the format expected by Cytoscape.js
+		const elements = initialData.nodes.map(node => ({
+			data: { id: node.id, label: node.label, image: node.image }
+		})).concat(initialData.edges.map(edge => ({
+			data: { id: edge.id, source: edge.from, target: edge.to }
+		})));
 
-		const options: Options = {
-			nodes: {
-				borderWidth: 4,
-				size: 30,
-				color: {
-					border: '#406897',
-					background: '#6AAFFF'
+		cy = cytoscape({
+			container,
+			elements,
+			style: [
+				{
+					selector: 'node',
+					style: {
+						'background-color': '#6AAFFF',
+						'label': 'data(label)',
+						'border-color': '#406897',
+						'border-width': 4,
+						'width': 30,
+						'height': 30,
+						'background-image': 'data(image)',
+						'background-fit': 'cover',
+						'text-valign': 'center',
+						'text-halign': 'center',
+						'font-size': '10px',
+						'color': 'black'
+					}
 				},
-				font: { color: 'black' },
-				shapeProperties: {
-					useBorderWithImage: true
+				{
+					selector: 'edge',
+					style: {
+						'width': 3,
+						'line-color': '#d3d3d3',
+						'target-arrow-color': '#d3d3d3',
+						'target-arrow-shape': 'triangle',
+						'curve-style': 'bezier'
+					}
 				}
-			},
-			edges: {
-				color: 'lightgray'
-			},
-			physics: {
-				stabilization: true, // Adjusted to true for initial stabilization
-				barnesHut: {
-					gravitationalConstant: -4000,
-					centralGravity: 1,
-					springLength: 1,
-					springConstant: 0.01,
-					damping: 0.2,
-					avoidOverlap: 0.1
-				},
-				solver: 'barnesHut'
-			}
-			// layout: {
-			// 	improvedLayout: false // Disabling the improved layout algorithm
-			// }
-		};
+			],
+			layout: layoutConfig
+		});
 
-		if (container) {
-			network = new vis.Network(container, data, options);
-			network.on('click', async (params) => {
-				if (params.nodes.length > 0) {
-					const nodeId = params.nodes[0]; // Get the clicked node ID
-					await expandNode(nodeId, d3Graph);
-				}
-			});
-		}
+		cy.on('tap', 'node', async function(event) {
+			const nodeId = event.target.id();
+			await expandNode(nodeId, d3Graph);
+		});
 	});
 
 	async function expandNode(nodeId: string, d3Graph: D3Graph) {
 		const { nodes: newNodes, edges: newEdges } = await d3Graph.fetchDataForNode(nodeId);
+		const elementsToAdd = newNodes.filter(node => cy.getElementById(node.id).length === 0)
+			.map(node => ({ group: 'nodes', data: { id: node.id, label: node.label, image: node.image } }))
+			.concat(newEdges.filter(edge => cy.getElementById(edge.id).length === 0)
+				.map(edge => ({ group: 'edges', data: { id: edge.id, source: edge.from, target: edge.to } })));
 
-		// Merge nodes, avoiding duplicates
-		const nodeIds = new Set(nodes.map((node) => node.id));
-		newNodes.forEach((newNode) => {
-			if (!nodeIds.has(newNode.id)) {
-				nodes.push(newNode);
-				nodeIds.add(newNode.id);
-			}
-		});
+		cy.add(elementsToAdd);
+		applyLayout();
+	}
 
-		// Merge edges, avoiding duplicates
-		const edgeKeys = new Set(edges.map((edge) => `${edge.from}-${edge.to}`));
-		newEdges.forEach((newEdge) => {
-			const edgeKey = `${newEdge.from}-${newEdge.to}`;
-			if (!edgeKeys.has(edgeKey)) {
-				edges.push(newEdge);
-				edgeKeys.add(edgeKey);
-			}
-		});
-
-		// Update the network
-		network.setData({ nodes, edges });
+	function applyLayout() {
+		cy.layout(layoutConfig).run();
 	}
 </script>
 
