@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+	font-family: 'DM Sans';
+	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf') format('truetype-variations');
+	font-weight: 100 900; /* Range from Thin to Black */
+}
+
+@font-face {
+	font-family: 'DM Sans';
+	src: url('/fonts/DMSans-Italic-VariableFont_opsz,wght.ttf') format('truetype-variations');
+	font-weight: 100 900; /* Range from Thin to Black */
+	font-style: italic;
+}
+
+:root {
+	font-family: 'DM Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+	color-scheme: light;
+	color: black;
+
+	--primary-bg-color: #f6f1ed;
+	--secondary-bg-color: #27183e;
+
+	background-color: var(--primary-bg-color);
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	--sidebar-shadow-color: rgba(0, 0, 0, 0.1);
+	--toggle-btn-bg-color: #ccc;
+	--toggle-btn-color: #333;
+}
+
+a {
+	font-weight: 500;
+	color: #646cff;
+	text-decoration: inherit;
+}
+a:hover {
+	color: #535bf2;
+}
+
+body {
+	margin: 0;
+	display: flex;
+	place-items: center;
+	min-width: 320px;
+	min-height: 100vh;
+}
+
+/* h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+} */
+
+@media (prefers-color-scheme: light) {
+	:root {
+		color: #213547;
+		background-color: #ffffff;
+	}
+	a:hover {
+		color: #747bff;
+	}
+	button {
+		background-color: #f9f9f9;
+	}
+}

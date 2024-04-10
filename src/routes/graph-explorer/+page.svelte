@@ -1,0 +1,8 @@
+<script>
+	import D3graph from './components/GraphExplorer.svelte';
+	import Page from '$lib/components/Page.svelte';
+</script>
+
+<Page>
+	<D3graph />
+</Page>
