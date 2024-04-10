@@ -1,91 +1,151 @@
-import { ethers } from "ethers";
-import { CirclesAPI } from "./gardenApi";
-import { RpcApi } from "./rpc";
+import { CirclesAPI } from './gardenApi';
+import { RpcApi } from './rpc';
+import { Pathfinder } from '$lib/api/pathfinder';
 
 interface UserMap {
-  [address: string]: {
-    username: string;
-    avatarUrl: string;
-  };
+	[address: string]: {
+		username: string;
+		avatarUrl: string;
+	};
 }
 
 interface UserData {
-  safeAddress: string;
-  username: string;
-  avatarUrl?: string;
+	safeAddress: string;
+	username: string;
+	avatarUrl?: string;
 }
 
 interface Node {
-  id: string;
-  label: string;
-  shape: string;
-  image: string;
+	id: string;
+	label: string;
+	shape: string;
+	image: string;
 }
 
 interface Edge {
-  id: string;
-  from: string;
-  to: string;
+	id: string;
+	from: string;
+	to: string;
 }
 
 export class D3Graph {
-  private rpcApi: RpcApi;
-  private sourceAddress: string;
-  private defaultAvatarUrl: string = "https://example.com/path/to/default/avatar.png";
+	private rpcApi: RpcApi;
+	private sourceAddress: string;
+	private defaultAvatarUrl: string = 'https://example.com/path/to/default/avatar.png';
 
-  constructor(rpcUrl: string, sourceAddress: string) {
-    this.rpcApi = new RpcApi(rpcUrl);
-    this.sourceAddress = sourceAddress;
-  }
+	constructor(rpcUrl: string, sourceAddress: string) {
+		this.rpcApi = new RpcApi(rpcUrl);
+		this.sourceAddress = sourceAddress;
+	}
 
-  async fetchDataForNode(nodeAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
-    try {
-      const trustRelations = await this.rpcApi.getTrustRelations(nodeAddress);
-      const checksummedNodeAddress = ethers.getAddress(nodeAddress);
+	async fetchPathData(pathFromAddress: string, pathToAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
+		pathFromAddress = pathFromAddress.toLowerCase();
+		pathToAddress = pathToAddress.toLowerCase();
+		const pathfinder = new Pathfinder('/api');
+		const pathResponse = await pathfinder.getArgsForPath(pathFromAddress, pathToAddress, '9999999999999999999999999999999');
+		const transferSteps = pathResponse.data?.directPath?.transfers ?? [];
 
-      // Ensure unique addresses
-      const addresses = new Set([checksummedNodeAddress]);
-      Object.keys(trustRelations.result.trusts).forEach(address => addresses.add(ethers.getAddress(address)));
-      Object.keys(trustRelations.result.trustedBy).forEach(address => addresses.add(ethers.getAddress(address)));
+		// Collect all unique addresses involved in the path
+		const addresses = new Set<string>();
+		transferSteps.forEach(step => {
+			addresses.add(step.from);
+			addresses.add(step.to);
+		});
 
-      // Fetch user data for these addresses
-      const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
+		// Fetch user data for these addresses
+		const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
 
-      // Create a map for quick lookup of username and avatar URL by address
-      const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
-        const checksumAddress = ethers.getAddress(user.safeAddress);
-        acc[checksumAddress] = {
-          username: user.username || checksumAddress, // Fallback to address if username is not provided
-          avatarUrl: user.avatarUrl || this.defaultAvatarUrl,
-        };
-        return acc;
-      }, {});
+		// Create a map for quick lookup of username and avatar URL by address
+		const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
+			acc[user.safeAddress.toLowerCase()] = {
+				username: user.username || user.safeAddress.toLowerCase(), // Fallback to address if username is not provided
+				avatarUrl: user.avatarUrl || this.defaultAvatarUrl
+			};
+			return acc;
+		}, {});
 
-      // Generate nodes
-      const nodes = Array.from(addresses).map(address => ({
-        id: address,
-        label: userMap[address]?.username || address,
-        shape: "circularImage",
-        image: userMap[address]?.avatarUrl || this.defaultAvatarUrl,
-      }));
+		// Process transfer steps to match the Node and Edge interface
+		const edgeSet = new Set<string>(); // Ensure each edge is unique
+		const newEdges: Edge[] = [];
+		transferSteps.forEach(step => {
+			const edgeId = `${step.from.toLowerCase()}-${step.to.toLowerCase()}`;
+			if (!edgeSet.has(edgeId)) {
+				edgeSet.add(edgeId);
+				newEdges.push({
+					id: edgeId,
+					from: step.from.toLowerCase(),
+					to: step.to.toLowerCase()
+				});
+			}
+		});
 
-      // Generate edges based on trust relationships
-      const edges = [
-        ...Object.keys(trustRelations.result.trusts).map(trustedAddress => ({
-          id: `${checksummedNodeAddress}-${trustedAddress}`,
-          from: checksummedNodeAddress,
-          to: ethers.getAddress(trustedAddress),
-        })),
-        ...Object.keys(trustRelations.result.trustedBy).map(trustingAddress => ({
-          id: `${trustingAddress}-${checksummedNodeAddress}`,
-          from: ethers.getAddress(trustingAddress),
-          to: checksummedNodeAddress,
-        })),
-      ];
+		// Generate nodes ensuring uniqueness
+		const seenAddresses = new Set<string>();
+		const newNodes: Node[] = [];
+		Array.from(addresses).forEach(address => {
+			address = address.toLowerCase();
+			if (!seenAddresses.has(address)) {
+				seenAddresses.add(address);
+				newNodes.push({
+					id: address,
+					label: userMap[address]?.username || address,
+					shape: 'circularImage',
+					image: userMap[address]?.avatarUrl || this.defaultAvatarUrl
+				});
+			}
+		});
 
-      return { nodes, edges };
-    } catch (error) {
-      throw new Error(`Error preparing data for Vis Network: ${error}`);
-    }
-  }
+		return { nodes: newNodes, edges: newEdges };
+	}
+
+	async fetchDataForNode(nodeAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
+		nodeAddress = nodeAddress.toLowerCase();
+		try {
+			const trustRelations = await this.rpcApi.getTrustRelations(nodeAddress);
+
+			// Ensure unique addresses
+			const addresses = new Set([nodeAddress]);
+			Object.keys(trustRelations.result.trusts).forEach(address => addresses.add(address.toLowerCase()));
+			Object.keys(trustRelations.result.trustedBy).forEach(address => addresses.add(address.toLowerCase()));
+
+			// Fetch user data for these addresses
+			const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
+
+			// Create a map for quick lookup of username and avatar URL by address
+			const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
+				const safeAddress = user.safeAddress.toLowerCase();
+				acc[safeAddress] = {
+					username: user.username || safeAddress, // Fallback to address if username is not provided
+					avatarUrl: user.avatarUrl || this.defaultAvatarUrl
+				};
+				return acc;
+			}, {});
+
+			// Generate nodes
+			const nodes = Array.from(addresses).map(address => ({
+				id: address,
+				label: userMap[address]?.username || address,
+				shape: 'circularImage',
+				image: userMap[address]?.avatarUrl || this.defaultAvatarUrl
+			}));
+
+			// Generate edges based on trust relationships
+			const edges = [
+				...Object.keys(trustRelations.result.trusts).map(trustedAddress => ({
+					id: `${nodeAddress}-${trustedAddress}`,
+					from: nodeAddress,
+					to: trustedAddress
+				})),
+				...Object.keys(trustRelations.result.trustedBy).map(trustingAddress => ({
+					id: `${trustingAddress}-${nodeAddress}`,
+					from: trustingAddress,
+					to: nodeAddress
+				}))
+			];
+
+			return { nodes, edges };
+		} catch (error) {
+			throw new Error(`Error preparing data for Vis Network: ${error}`);
+		}
+	}
 }
