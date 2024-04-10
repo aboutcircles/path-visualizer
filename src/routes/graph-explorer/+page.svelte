@@ -1,5 +1,5 @@
 <script>
-	import D3graph from '$lib/components/D3graph.svelte';
+	import D3graph from './components/GraphExplorer.svelte';
 	import Page from '$lib/components/Page.svelte';
 </script>
 

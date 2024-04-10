@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ethers } from 'ethers';
 
 export interface UserData {
   id: string;
@@ -15,6 +16,7 @@ export class CirclesAPI {
   private static BASE_URL: string = "https://api.circles.garden/api/";
 
   public static async fetchUserData(addresses: string[]): Promise<UserData[]> {
+    addresses = addresses.map(address => ethers.getAddress(address));
     const chunkedAddresses = (addressList: string[], chunkSize: number = 50): string[][] => {
       const chunks: string[][] = [];
       for (let i = 0; i < addressList.length; i += chunkSize) {

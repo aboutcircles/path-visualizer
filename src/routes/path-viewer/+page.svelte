@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Page from '$lib/components/Page.svelte';
-	import Sankey from '$lib/components/Sankey.svelte';
+	import Sankey from './components/Sankey.svelte';
 </script>
 
 <Page>
