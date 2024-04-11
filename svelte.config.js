@@ -1,4 +1,5 @@
-import adapter from '@sveltejs/adapter-auto';
+// import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -23,15 +24,7 @@ const config = {
 			}
 		}),
 		alias: {
-			'$bottom-sheets': './src/bottom-sheets',
-			$modals: './src/modals',
-			$components: './src/lib/components',
-			$stores: './src/lib/stores',
-			$utils: 'src/lib/utils',
-			$interfaces: './src/interfaces',
-			$types: './src/types',
-			$services: './src/lib/services',
-			$api: './src/routes/api'
+			$components: './src/lib/components'
 		}
 	}
 };
