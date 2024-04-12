@@ -16,7 +16,7 @@ export class CirclesAPI {
   private static BASE_URL: string = "https://api.circles.garden/api/";
 
   public static async fetchUserData(addresses: string[]): Promise<UserData[]> {
-    addresses = addresses.map(address => ethers.getAddress(address));
+    addresses = addresses.map(address => ethers.getAddress(address));  // Ensuring addresses are checksummed
     const chunkedAddresses = (addressList: string[], chunkSize: number = 50): string[][] => {
       const chunks: string[][] = [];
       for (let i = 0; i < addressList.length; i += chunkSize) {
@@ -33,7 +33,12 @@ export class CirclesAPI {
       try {
         const response = await axios.get<ApiResponse>(queryUrl);
         if (response.status === 200 && response.data.data) {
-          allUserData = allUserData.concat(response.data.data);
+          // Mapping through the data to adjust the avatarUrl
+          const userDataWithProxiedAvatars = response.data.data.map(user => ({
+            ...user,
+            avatarUrl: user.avatarUrl ? `/avatars/${user.avatarUrl.split('/').pop()}` : undefined
+          }));
+          allUserData = allUserData.concat(userDataWithProxiedAvatars);
         } else {
           throw new Error(`Failed to fetch user data. Status code: ${response.status}`);
         }
@@ -42,7 +47,7 @@ export class CirclesAPI {
       }
     }
 
-    console.log("allUserData", allUserData)
+    console.log("allUserData with proxied avatars", allUserData);
 
     return allUserData;
   }

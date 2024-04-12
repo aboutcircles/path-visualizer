@@ -1,4 +1,5 @@
 <svelte:options accessors />
+
 <script lang="ts">
 	import { ethers } from 'ethers';
 	import { D3Graph } from '$lib/api/d3graph';
@@ -13,7 +14,7 @@
 	export let cy: cytoscape.Core;
 	export let nodeList: NodeList | undefined;
 
-	let elements: { data: { image: string, addedAt: number, id: string, label: string } }[] = [];
+	let elements: { data: { image: string; addedAt: number; id: string; label: string } }[] = [];
 	let expandedNodes = writable(new Set<string>()); // Now a Svelte store for reactivity
 	let layoutConfig = writable<any>(null);
 	let container: HTMLDivElement;
@@ -75,23 +76,23 @@
 					selector: 'node',
 					style: {
 						'background-color': '#6AAFFF',
-						'label': 'data(label)',
+						label: 'data(label)',
 						'border-color': '#406897',
 						'border-width': 4,
-						'width': 'mapData(degree, 1, 10, 20, 50)',
-						'height': 'mapData(degree, 1, 10, 20, 50)',
+						width: 'mapData(degree, 1, 10, 20, 50)',
+						height: 'mapData(degree, 1, 10, 20, 50)',
 						'background-image': 'data(image)',
 						'background-fit': 'cover',
 						'text-valign': 'center',
 						'text-halign': 'center',
 						'font-size': '10px',
-						'color': 'black'
+						color: 'black'
 					}
 				},
 				{
 					selector: 'edge',
 					style: {
-						'width': 3,
+						width: 3,
 						'line-color': '#d3d3d3',
 						'target-arrow-color': '#d3d3d3',
 						'target-arrow-shape': 'triangle',
@@ -104,7 +105,7 @@
 
 		layoutConfig.set(initialLayoutConfig); // Set initial layout config
 
-		cy.on('tap', 'node', async function(evt) {
+		cy.on('tap', 'node', async function (evt) {
 			const nodeId = evt.target.id();
 			await toggleNodeExpansion(nodeId, nodeList);
 		});
@@ -116,7 +117,7 @@
 
 	export function runLayout() {
 		nodeList?.refresh();
-		cy!.nodes().forEach(node => {
+		cy!.nodes().forEach((node) => {
 			node.data('degree', node.degree());
 		});
 		$: layoutConfig, $layoutConfig ? cy.layout($layoutConfig).run() : null;
@@ -124,7 +125,7 @@
 
 	async function toggleNodeExpansion(nodeId: string, nodeList: NodeList | undefined) {
 		let shouldExpand;
-		expandedNodes.update(current => {
+		expandedNodes.update((current) => {
 			shouldExpand = !current.has(nodeId);
 			if (shouldExpand) {
 				current.add(nodeId);
@@ -145,33 +146,31 @@
 			const address = ethers.getAddress(nodeId);
 			const additionalData = await d3Graph.fetchDataForNode(address);
 			let newElements = [
-				...additionalData.nodes.map(node => ({
+				...additionalData.nodes.map((node) => ({
 					data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
 				})),
-				...additionalData.edges.map(edge => ({
+				...additionalData.edges.map((edge) => ({
 					data: { id: edge.id, source: edge.from, target: edge.to }
 				}))
 			];
 
 			// Efficiently filter out all 'newElements' that already exist in the graph
-			const existingNodes = new Set(cy.nodes().map(node => node.id()));
-			const existingEdges = new Set(cy.edges().map(edge => edge.id()));
-			newElements = newElements.filter(element =>
-				!existingNodes.has(element.data.id)
-				&& !existingEdges.has(element.data.id)
+			const existingNodes = new Set(cy.nodes().map((node) => node.id()));
+			const existingEdges = new Set(cy.edges().map((edge) => edge.id()));
+			newElements = newElements.filter(
+				(element) => !existingNodes.has(element.data.id) && !existingEdges.has(element.data.id)
 			);
 
 			cy.add(newElements);
 
 			// Remove all self references
-			cy.edges().forEach(edge => {
+			cy.edges().forEach((edge) => {
 				if (edge.source().id() === edge.target().id()) {
 					edge.remove();
 				}
 			});
 
-			if (performLayout)
-				runLayout();
+			if (performLayout) runLayout();
 
 			nodeList?.refresh();
 		} catch (error) {
@@ -183,8 +182,10 @@
 		try {
 			const collapsingNode = cy.getElementById(nodeId);
 			const collapsingNodeNeighbours = collapsingNode.neighborhood().nodes();
-			collapsingNodeNeighbours.forEach(neighbor => {
-				const connectedEdges = neighbor.connectedEdges(edge => edge.source().id() !== nodeId && edge.target().id() !== nodeId);
+			collapsingNodeNeighbours.forEach((neighbor) => {
+				const connectedEdges = neighbor.connectedEdges(
+					(edge) => edge.source().id() !== nodeId && edge.target().id() !== nodeId
+				);
 				if (connectedEdges.length == 0) {
 					if (neighbor == collapsingNode) {
 						return;
@@ -193,8 +194,7 @@
 				}
 			});
 
-			if (performLayout)
-				runLayout();
+			if (performLayout) runLayout();
 
 			nodeList?.refresh();
 		} catch (error) {
@@ -208,37 +208,42 @@
 			const address = ethers.getAddress(addNodeAddress);
 			const additionalData = await d3Graph.fetchDataForNode(address);
 			let newElements = additionalData.nodes
-				.map(node => ({
+				.map((node) => ({
 					data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
 				}))
-				.concat(additionalData.edges.map(edge => ({
-					data: { id: edge.id, source: edge.from, target: edge.to }
-				})));
+				.concat(
+					additionalData.edges.map((edge) => ({
+						data: { id: edge.id, source: edge.from, target: edge.to }
+					}))
+				);
 
 			// Only keep the 'addNodeAddress' node
-			newElements = newElements.filter(element => element.data.id === addNodeAddress);
+			newElements = newElements.filter((element) => element.data.id === addNodeAddress);
 
 			cy.add(newElements);
 
 			runLayout();
 			nodeList?.refresh();
-
 		} catch (error) {
 			console.error('Failed to add node:', error);
 		}
 	}
 
-	export async function addPath(pathFromAddress: string, pathToAddress: string, nodeList: NodeList | undefined) {
+	export async function addPath(
+		pathFromAddress: string,
+		pathToAddress: string,
+		nodeList: NodeList | undefined
+	) {
 		pathFromAddress = pathFromAddress.toLowerCase();
 		pathToAddress = pathToAddress.toLowerCase();
 
 		const nodesAndEdges = await d3Graph.fetchPathData(pathFromAddress, pathToAddress);
 
-		const nodeElements = nodesAndEdges.nodes.map(node => ({
+		const nodeElements = nodesAndEdges.nodes.map((node) => ({
 			data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
 		}));
 
-		const edgeElements = nodesAndEdges.edges.map(edge => ({
+		const edgeElements = nodesAndEdges.edges.map((edge) => ({
 			data: { id: edge.id, source: edge.from, target: edge.to }
 		}));
 
@@ -251,7 +256,7 @@
 	}
 
 	export async function commonFriends(commonFriendsString: string, nodeList: NodeList | undefined) {
-		const addresses = commonFriendsString.split(',').map(address => address.trim().toLowerCase());
+		const addresses = commonFriendsString.split(',').map((address) => address.trim().toLowerCase());
 		for (const address of addresses) {
 			await expandNode(address, nodeList, false);
 		}
@@ -265,13 +270,4 @@
 	}
 </script>
 
-<div id="graph" bind:this={container} class="graph-area"></div>
-
-<style>
-    .graph-area {
-        flex-grow: 1;
-        height: calc(100% - 48px);
-        width: 100%;
-        background-color: #efefef;
-    }
-</style>
+<div id="graph" bind:this={container} class="flex-grow w-full bg-gray-200"></div>

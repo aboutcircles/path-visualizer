@@ -1,4 +1,5 @@
-<svelte:options accessors/>
+<svelte:options accessors />
+
 <script lang="ts">
 	import { ethers } from 'ethers';
 
@@ -18,19 +19,20 @@
 	}
 
 	function setNodeList() {
-		filteredNodes = cy?.nodes().filter(node => {
-			if (searchText === '') return true;
-			const label = node.data().label.toLowerCase();
-			const id = node.data().id.toLowerCase();
-			return label.includes(searchText.toLowerCase()) || id.includes(searchText.toLowerCase());
-		}) ?? [];
+		filteredNodes =
+			cy?.nodes().filter((node) => {
+				if (searchText === '') return true;
+				const label = node.data().label.toLowerCase();
+				const id = node.data().id.toLowerCase();
+				return label.includes(searchText.toLowerCase()) || id.includes(searchText.toLowerCase());
+			}) ?? [];
 
 		// Sort all nodes with picture and label first, then all with labels, and finally all with ids
 		filteredNodes = filteredNodes.sort((a, b) => {
 			const aHasLabel = !ethers.isAddress(a.data().label);
 			const bHasLabel = !ethers.isAddress(b.data().label);
-			const aHasImage = a.data().image !== 'https://example.com/path/to/default/avatar.png';
-			const bHasImage = b.data().image !== 'https://example.com/path/to/default/avatar.png';
+			const aHasImage = a.data().image !== './default.png';
+			const bHasImage = b.data().image !== './default.png';
 
 			if (aHasImage && !bHasImage) return -1;
 			if (!aHasImage && bHasImage) return 1;
@@ -58,7 +60,7 @@
 		});
 		cy.edges().style({
 			'line-color': '#d3d3d3',
-			'width': 3,
+			width: 3,
 			'target-arrow-color': '#d3d3d3'
 		});
 
@@ -79,7 +81,7 @@
 
 			node.connectedEdges().style({
 				'line-color': '#FFD700', // Highlight color for edges connected to selected nodes
-				'width': 5,
+				width: 5,
 				'target-arrow-color': '#FFD700'
 			});
 		});
@@ -106,7 +108,7 @@
 				title={node.data().id}
 			>
 				<img
-					src={node.data().image || "/default.png"}
+					src={node.data().image}
 					style="width: 30px; height: 30px; border-radius: 15px; margin-right: 10px;"
 				/>
 				{ethers.isAddress(node.data().label)
@@ -118,51 +120,51 @@
 </div>
 
 <style>
-    .node-list-pane {
-        width: 250px;
-        background-color: #f0f0f0;
-        overflow-y: auto;
-    }
+	.node-list-pane {
+		width: 250px;
+		background-color: #f0f0f0;
+		overflow-y: auto;
+	}
 
-    .input-area {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        background-color: #f5f5f5;
-        width: calc(100% - 20px);
-    }
+	.input-area {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px;
+		background-color: #f5f5f5;
+		width: calc(100% - 20px);
+	}
 
-    .input-area label {
-        margin-right: 8px;
-    }
+	.input-area label {
+		margin-right: 8px;
+	}
 
-    .input-area input {
-        flex-grow: 1;
-        padding: 8px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        width: auto;
-    }
+	.input-area input {
+		flex-grow: 1;
+		padding: 8px;
+		border-radius: 4px;
+		border: 1px solid #ccc;
+		width: auto;
+	}
 
-    ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
 
-    li {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-    }
+	li {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+	}
 
-    img {
-        flex-shrink: 0;
-        margin-right: 10px;
-    }
+	img {
+		flex-shrink: 0;
+		margin-right: 10px;
+	}
 
-    .selected {
-        background-color: #fff;
-    }
+	.selected {
+		background-color: #fff;
+	}
 </style>

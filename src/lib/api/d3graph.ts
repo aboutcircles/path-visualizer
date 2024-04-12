@@ -31,7 +31,7 @@ interface Edge {
 export class D3Graph {
 	private rpcApi: RpcApi;
 	private sourceAddress: string;
-	private defaultAvatarUrl: string = 'https://example.com/path/to/default/avatar.png';
+	private defaultAvatarUrl: string = './default.png';
 
 	constructor(rpcUrl: string, sourceAddress: string) {
 		this.rpcApi = new RpcApi(rpcUrl);
