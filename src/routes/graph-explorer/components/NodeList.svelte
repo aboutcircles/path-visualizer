@@ -99,7 +99,7 @@
 			on:input={() => setNodeList()}
 		/>
 	</div>
-	<ul>
+	<ul class="max-h-full">
 		{#each filteredNodes as node}
 			<li
 				on:click={() => toggleNodeSelect(node.data().id)}
@@ -123,7 +123,10 @@
 	.node-list-pane {
 		width: 250px;
 		background-color: #f0f0f0;
-		overflow-y: auto;
+		overflow-y: auto; /* Ensures scrollability */
+		max-height: 100vh; /* Limits the height to the viewport height */
+		border: 1px solid #ccc; /* Optional: adds a border for visual demarcation */
+		box-sizing: border-box; /* Includes padding and border in the height calculation */
 	}
 
 	.input-area {
@@ -132,7 +135,7 @@
 		gap: 10px;
 		padding: 10px;
 		background-color: #f5f5f5;
-		width: calc(100% - 20px);
+		width: calc(100% - 20px); /* Adjusts the width to account for padding */
 	}
 
 	.input-area label {
@@ -162,6 +165,9 @@
 	img {
 		flex-shrink: 0;
 		margin-right: 10px;
+		border-radius: 15px; /* Ensures the image is rounded */
+		width: 30px; /* Fixes the width of the image */
+		height: 30px; /* Fixes the height of the image */
 	}
 
 	.selected {

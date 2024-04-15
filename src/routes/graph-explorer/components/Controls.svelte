@@ -14,9 +14,9 @@
 		<input
 			id="add-node-input"
 			type="text"
-			placeholder="0xadd6e22..."
-			bind:value={addNodeAddress}
 			class="flex-grow p-2 border border-gray-300 rounded"
+			bind:value={addNodeAddress}
+			placeholder="Enter Ethereum address"
 		/>
 		<button
 			on:click={() => onAddNode(addNodeAddress)}
@@ -28,17 +28,17 @@
 		<input
 			id="path-from-input"
 			type="text"
-			placeholder="0xadd6e22..."
-			bind:value={pathFromAddress}
 			class="flex-grow p-2 border border-gray-300 rounded"
+			bind:value={pathFromAddress}
+			placeholder="Start address"
 		/>
 		<label for="path-to-input" class="mr-2">to:</label>
 		<input
 			id="path-to-input"
 			type="text"
-			placeholder="0xadd6e22..."
-			bind:value={pathToAddress}
 			class="flex-grow p-2 border border-gray-300 rounded"
+			bind:value={pathToAddress}
+			placeholder="Destination address"
 		/>
 		<button
 			on:click={() => onAddPath(pathFromAddress, pathToAddress)}
@@ -50,9 +50,9 @@
 		<input
 			id="common-friends-input"
 			type="text"
-			placeholder="0xde374ece6fa50e781e81aac78e811b33d16912c7, 0x3cb406Def33aeD0ABD6D02a75FEdCa8e2E8D1A2e, .."
-			bind:value={commonFriendsString}
 			class="flex-grow p-2 border border-gray-300 rounded"
+			bind:value={commonFriendsString}
+			placeholder="List of Ethereum addresses separated by commas"
 		/>
 		<button
 			on:click={() => onCommonFriends(commonFriendsString)}

@@ -118,9 +118,9 @@
 	export function runLayout() {
 		nodeList?.refresh();
 		cy!.nodes().forEach((node) => {
-			node.data('degree', node.degree());
+			node.data('degree', node.degree(true));
 		});
-		$: layoutConfig, $layoutConfig ? cy.layout($layoutConfig).run() : null;
+		$: $layoutConfig ? cy.layout($layoutConfig).run() : null;
 	}
 
 	async function toggleNodeExpansion(nodeId: string, nodeList: NodeList | undefined) {

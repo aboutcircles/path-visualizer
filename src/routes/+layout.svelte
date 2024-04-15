@@ -1,9 +1,11 @@
-<script lang="ts">
+<script>
 	import Navbar from '$lib/components/Navbar.svelte';
 	import '../app.css';
 </script>
 
-<div class="flex flex-col items-center justify-center h-screen w-screen px-4">
+<div class="flex flex-col items-center justify-center max-h-screen w-full p-4">
 	<Navbar />
-	<slot />
+	<div class="w-full overflow-auto h-full">
+		<slot />
+	</div>
 </div>
