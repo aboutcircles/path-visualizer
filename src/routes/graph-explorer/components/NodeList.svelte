@@ -88,10 +88,11 @@
 	}
 </script>
 
-<div class="node-list-pane">
-	<div class="input-area">
-		<label for="address-input">Search:</label>
+<div>
+	<div class="flex items-center gap-3 p-3 bg-gray-100 w-full px-5">
+		<label class="pr-2" for="address-input">Search:</label>
 		<input
+			class="flex-grow p-2 border border-gray-300 rounded w-full"
 			id="address-input"
 			type="text"
 			placeholder="username or address"
@@ -99,18 +100,15 @@
 			on:input={() => setNodeList()}
 		/>
 	</div>
-	<ul class="max-h-full">
+	<ul class="max-h-full p-0 m-0">
 		{#each filteredNodes as node}
 			<li
+				class="flex items-center mb-3 {selectedNodes.has(node.data().id) ? 'bg-white' : ''}"
 				on:click={() => toggleNodeSelect(node.data().id)}
 				style="cursor: pointer;"
-				class:selected={selectedNodes.has(node.data().id)}
 				title={node.data().id}
 			>
-				<img
-					src={node.data().image}
-					style="width: 30px; height: 30px; border-radius: 15px; margin-right: 10px;"
-				/>
+				<img class="w-8 h-8 rounded-full mr-2" src={node.data().image} />
 				{ethers.isAddress(node.data().label)
 					? truncateAddress(node.data().label)
 					: node.data().label}
@@ -118,59 +116,3 @@
 		{/each}
 	</ul>
 </div>
-
-<style>
-	.node-list-pane {
-		width: 250px;
-		background-color: #f0f0f0;
-		overflow-y: auto; /* Ensures scrollability */
-		max-height: 100vh; /* Limits the height to the viewport height */
-		border: 1px solid #ccc; /* Optional: adds a border for visual demarcation */
-		box-sizing: border-box; /* Includes padding and border in the height calculation */
-	}
-
-	.input-area {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 10px;
-		background-color: #f5f5f5;
-		width: calc(100% - 20px); /* Adjusts the width to account for padding */
-	}
-
-	.input-area label {
-		margin-right: 8px;
-	}
-
-	.input-area input {
-		flex-grow: 1;
-		padding: 8px;
-		border-radius: 4px;
-		border: 1px solid #ccc;
-		width: auto;
-	}
-
-	ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	li {
-		display: flex;
-		align-items: center;
-		margin-bottom: 10px;
-	}
-
-	img {
-		flex-shrink: 0;
-		margin-right: 10px;
-		border-radius: 15px; /* Ensures the image is rounded */
-		width: 30px; /* Fixes the width of the image */
-		height: 30px; /* Fixes the height of the image */
-	}
-
-	.selected {
-		background-color: #fff;
-	}
-</style>

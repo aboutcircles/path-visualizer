@@ -15,11 +15,11 @@
 </script>
 
 <div class="flex h-full w-full">
-	<div class="node-list-pane">
+	<div class="node-list-pane overflow-auto bg-gray-100">
 		<NodeList {cy} bind:this={nodeList} />
 	</div>
-	<div class="resize-grip"></div>
-	<div class="graph-container">
+	<div class="cursor-ew-resize bg-gray-300 w-3"></div>
+	<div class="flex flex-grow flex-col">
 		<Controls
 			bind:addNodeAddress
 			bind:commonFriendsString
@@ -32,23 +32,3 @@
 		<Graph {nodeList} bind:cy bind:this={graph} />
 	</div>
 </div>
-
-<style>
-	.node-list-pane {
-		width: 250px; /* Starting width, adjust as needed */
-		background-color: #f0f0f0; /* Light gray, adjust as needed */
-		overflow-y: auto; /* Enables scrolling for long lists */
-	}
-
-	.resize-grip {
-		cursor: ew-resize;
-		background-color: #ccc; /* Light gray, adjust as needed */
-		width: 10px; /* Adjust grip width as needed */
-	}
-
-	.graph-container {
-		flex-grow: 1;
-		display: flex;
-		flex-direction: column;
-	}
-</style>
