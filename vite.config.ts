@@ -16,7 +16,7 @@ export default defineConfig({
 				rewrite: (path) => path.replace(/^\/api/, '') // remove /api prefix before making the request
 			},
 			'/avatars': { // Assuming the avatar path can be isolated
-				target: 'https://circles-ubi.s3.amazonaws.com/uploads/avatars',
+				target: 'https://circles-ubi.s3.amazonaws.com/uploads/',
 				changeOrigin: true,
 				rewrite: (path) => path.replace(/^\/avatars/, '')
 			}
