@@ -1,6 +1,6 @@
 import { CirclesAPI } from './gardenApi';
 import { RpcApi } from './rpc';
-import { Pathfinder } from '$lib/api/pathfinder';
+import { Pathfinder } from './pathfinder';
 
 interface UserMap {
 	[address: string]: {

@@ -36,7 +36,7 @@ export class CirclesAPI {
           // Mapping through the data to adjust the avatarUrl
           const userDataWithProxiedAvatars = response.data.data.map(user => ({
             ...user,
-            avatarUrl: user.avatarUrl ? `/avatars/${user.avatarUrl.split('/').pop()}` : undefined
+            avatarUrl: user.avatarUrl ? `/api/${user.avatarUrl.split('/').pop()}` : undefined
           }));
           allUserData = allUserData.concat(userDataWithProxiedAvatars);
         } else {

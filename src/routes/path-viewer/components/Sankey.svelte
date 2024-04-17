@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { SankeyChart } from '$lib/api/sankey';
-	import { CirclesAPI } from '$lib/api/gardenApi';
+	import { SankeyChart } from '../../../lib/api/sankey';
+	import { CirclesAPI } from '../../../lib/api/gardenApi';
 
 	let plotly: any;
 	const fromAddress = writable('');

@@ -10,15 +10,15 @@ export default defineConfig({
 	server: {
 		proxy: {
 			// Proxy requests from /api to https://pathfinder.circlesubi.id
-			'/api': {
-				target: 'https://pathfinder.circlesubi.id',
-				changeOrigin: true, // this is necessary for virtual hosted sites
-				rewrite: (path) => path.replace(/^\/api/, '') // remove /api prefix before making the request
-			},
-			'/avatars': { // Assuming the avatar path can be isolated
-				target: 'https://circles-ubi.s3.amazonaws.com/uploads/',
-				changeOrigin: true
-			}
+			// '/api': {
+			// 	target: 'https://pathfinder.circlesubi.id',
+			// 	changeOrigin: true, // this is necessary for virtual hosted sites
+			// 	rewrite: (path) => path.replace(/^\/api/, '') // remove /api prefix before making the request
+			// },
+			// '/avatars': { // Assuming the avatar path can be isolated
+			// 	target: 'https://circles-ubi.s3.amazonaws.com/uploads/',
+			// 	changeOrigin: true
+			// }
 		}
 	}
 });

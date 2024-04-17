@@ -54,6 +54,7 @@
 		"cytoscape-dagre": "^2.5.0",
 		"dagre": "^0.8.5",
 		"ethers": "^6.11.1",
+		"node-fetch": "^3.3.2",
 		"plotly.js-dist-min": "^2.30.1",
 		"vis-network": "^9.1.9"
 	}

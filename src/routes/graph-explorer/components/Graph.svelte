@@ -2,7 +2,7 @@
 
 <script lang="ts">
 	import { ethers } from 'ethers';
-	import { D3Graph } from '$lib/api/d3graph';
+	import { D3Graph } from '../../../lib/api/d3graph';
 	import cytoscape from 'cytoscape';
 	import dagre from 'cytoscape-dagre';
 	import NodeList from './NodeList.svelte';
@@ -153,7 +153,6 @@
 					data: { id: edge.id, source: edge.from, target: edge.to }
 				}))
 			];
-
 			// Efficiently filter out all 'newElements' that already exist in the graph
 			const existingNodes = new Set(cy.nodes().map((node) => node.id()));
 			const existingEdges = new Set(cy.edges().map((edge) => edge.id()));
