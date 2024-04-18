@@ -16,11 +16,7 @@ interface SankeyLink {
 }
 
 export class SankeyChart {
-  private pathfinder: Pathfinder;
-
-  constructor(pathfinderURL: string) {
-    this.pathfinder = new Pathfinder(pathfinderURL);
-  }
+  private pathfinder = new Pathfinder;
 
   private async getNames(safes: string[]): Promise<Record<string, string>> {
     const userData = await CirclesAPI.fetchUserData(safes);
@@ -42,9 +38,7 @@ export class SankeyChart {
 
   public async generateSankeyData(sourceAddress: string, sinkAddress: string, amount: string): Promise<{ nodes: SankeyNode[], links: SankeyLink[] }> {
     const pathData = await this.pathfinder.getArgsForPath(sourceAddress, sinkAddress, amount);
-    const transfers = pathData.data?.directPath?.transfers || [];
-
-    console.log("transfers", transfers)
+    const transfers = pathData.transfers || [];
 
     const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
     const uniqueAddresses = Array.from(addressSet);

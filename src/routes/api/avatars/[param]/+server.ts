@@ -2,9 +2,9 @@ import type { RequestHandler } from '@sveltejs/kit';
 import fetch from 'node-fetch';
 
 export const GET: RequestHandler = async ({ params }) => {
-  const { filename } = params;
+  const { param } = params;
 
-  const imageUrl = `https://circles-ubi.s3.amazonaws.com/uploads/avatars/${filename}`;
+  const imageUrl = `https://circles-ubi.s3.amazonaws.com/uploads/avatars/${param}`;
 
   try {
     const response = await fetch(imageUrl);

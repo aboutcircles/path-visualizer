@@ -19,10 +19,7 @@
 	let layoutConfig = writable<any>(null);
 	let container: HTMLDivElement;
 
-	const d3Graph = new D3Graph(
-		'https://circles-rpc.circlesubi.id/',
-		'0xde374ece6fa50e781e81aac78e811b33d16912c7'
-	);
+	const d3Graph = new D3Graph();
 
 	const coseLayout = {
 		name: 'cose',

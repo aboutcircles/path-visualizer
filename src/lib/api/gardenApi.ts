@@ -1,5 +1,4 @@
 import axios from "axios";
-import { ethers } from 'ethers';
 
 export interface UserData {
   id: string;
@@ -8,83 +7,55 @@ export interface UserData {
   safeAddress: string;
 }
 
-interface ApiResponse {
-  data: UserData[];
-}
-
+// Assuming the SvelteKit backend is hosted at the same base URL or you define it based on environment
 export class CirclesAPI {
-  private static BASE_URL: string = "https://api.circles.garden/api/";
+  private static BASE_URL: string = "/api/garden";  // Adjust as necessary for your deployment environment
 
   public static async fetchUserData(addresses: string[]): Promise<UserData[]> {
-    addresses = addresses.map(address => ethers.getAddress(address));  // Ensuring addresses are checksummed
-    const chunkedAddresses = (addressList: string[], chunkSize: number = 50): string[][] => {
-      const chunks: string[][] = [];
-      for (let i = 0; i < addressList.length; i += chunkSize) {
-        chunks.push(addressList.slice(i, i + chunkSize));
+    try {
+      const response = await axios.post<UserData[]>(`${CirclesAPI.BASE_URL}`, {
+        type: 'fetchUserData',
+        data: addresses
+      });
+      if (response.status === 200 && response.data) {
+        return response.data;
+      } else {
+        throw new Error(`Failed to fetch user data. Status code: ${response.status}`);
       }
-      return chunks;
-    };
-
-    let allUserData: UserData[] = [];
-
-    for (const addressChunk of chunkedAddresses(addresses)) {
-      const queryUrl: string = `${CirclesAPI.BASE_URL}users/?${addressChunk.map(address => `address[]=${address}`).join('&')}`;
-
-      try {
-        const response = await axios.get<ApiResponse>(queryUrl);
-        if (response.status === 200 && response.data.data) {
-          // Mapping through the data to adjust the avatarUrl
-          const userDataWithProxiedAvatars = response.data.data.map(user => ({
-            ...user,
-            avatarUrl: user.avatarUrl ? `/api/${user.avatarUrl.split('/').pop()}` : undefined
-          }));
-          allUserData = allUserData.concat(userDataWithProxiedAvatars);
-        } else {
-          throw new Error(`Failed to fetch user data. Status code: ${response.status}`);
-        }
-      } catch (error) {
-        throw new Error(`An error occurred while fetching user data: ${error}`);
-      }
+    } catch (error) {
+      throw new Error(`An error occurred while fetching user data: ${error instanceof Error ? error.message : error}`);
     }
-
-    console.log("allUserData with proxied avatars", allUserData);
-
-    return allUserData;
   }
 
   public static async getAllAvatarUrls(addresses: string[]): Promise<string[]> {
     try {
-      const userData = await CirclesAPI.fetchUserData(addresses);
-      const avatarUrls: string[] = [];
-
-      if (userData) {
-        userData.forEach(user => {
-          const avatarUrl: string | undefined = user.avatarUrl;
-          if (avatarUrl) {
-            avatarUrls.push(avatarUrl);
-          }
-        });
+      const response = await axios.post<string[]>(`${CirclesAPI.BASE_URL}`, {
+        type: 'getAllAvatarUrls',
+        data: addresses
+      });
+      if (response.status === 200 && response.data) {
+        return response.data;
+      } else {
+        throw new Error(`Failed to get avatar URLs. Status code: ${response.status}`);
       }
-
-      return avatarUrls;
     } catch (error) {
-      throw new Error(`An error occurred while getting avatar URLs: ${error}`);
+      throw new Error(`An error occurred while getting avatar URLs: ${error instanceof Error ? error.message : error}`);
     }
   }
 
   public static async resolveUsernameToAddress(username: string): Promise<string | null> {
-    const queryUrl = `${this.BASE_URL}users/?username[]=${username}`;
-
     try {
-      const response = await axios.get<ApiResponse>(queryUrl);
-      if (response.status === 200 && response.data.data && response.data.data.length > 0) {
-        const user = response.data.data[0];
-        return user.safeAddress || null;
+      const response = await axios.post<{ address: string }>(`${CirclesAPI.BASE_URL}`, {
+        type: 'resolveUsernameToAddress',
+        data: username
+      });
+      if (response.status === 200 && response.data && response.data.address) {
+        return response.data.address;
       } else {
-        return null;
+        return null;  // Username not found or other issue
       }
     } catch (error) {
-      throw new Error(`An error occurred while resolving username to address: ${error}`);
+      throw new Error(`An error occurred while resolving username to address: ${error instanceof Error ? error.message : error}`);
     }
   }
 }

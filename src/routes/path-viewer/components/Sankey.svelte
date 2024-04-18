@@ -28,7 +28,6 @@
 
 		try {
 			const sankeyData = await sankeyChart.generateSankeyData(sourceAddress, sinkAddress, amount);
-			console.log('Sankey data:', sankeyData);
 			drawChart(sankeyData);
 		} catch (error) {
 			console.error('Failed to generate Sankey data:', error);

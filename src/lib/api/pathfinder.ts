@@ -1,36 +1,22 @@
-export interface TransferPathStep {
-  readonly from: string;
-  readonly to: string;
-  readonly tokenOwner: string;
-  readonly value: string;
+export interface DirectPathResponse {
+  requestedAmount: string;
+  flow: string;
+  transfers: TransferPathStep[];
+  isValid: boolean;
 }
 
-type ApiTransferStep = {
+interface TransferPathStep {
   from: string;
   to: string;
-  token_owner: string;
+  tokenOwner: string;
   value: string;
-};
+}
 
-type directPathResponse = {
-  data?: {
-    directPath?: {
-      requestedAmount: string;
-      flow: unknown;
-      transfers: TransferPathStep[];
-      isValid?: boolean;
-    };
-  };
-};
 
 export class Pathfinder {
-  pathfinderURL: string;
+  pathfinderURL: string = '/api/pathfinder';  // Point to the local API endpoint
 
-  constructor(pathfinderURL: string) {
-    this.pathfinderURL = pathfinderURL;
-  }
-
-  async getArgsForPath(from: string, to: string, value: string): Promise<directPathResponse> {
+  async getArgsForPath(from: string, to: string, value: string): Promise<DirectPathResponse> {
     const query = {
       method: 'compute_transfer',
       params: { from, to, value: value.toString() }
@@ -49,27 +35,10 @@ export class Pathfinder {
         throw new Error(`Error calling API: ${response.status}`);
       }
 
-      const parsed = await response.json();
+      const parsed = await response.json();  // Assume the structure matches the transformed response your proxy returns
 
-      const transformedResponse: directPathResponse = {
-        data: {
-          directPath: {
-            requestedAmount: value,
-            flow: parsed.result.maxFlowValue,
-            transfers: parsed.result.transferSteps.map((step: ApiTransferStep) => ({
-              from: step.from,
-              to: step.to,
-              tokenOwner: step.token_owner,
-              value: step.value
-            })),
-            isValid: parsed.result.final
-          }
-        }
-      };
-
-      console.log("transformedResponse", transformedResponse);
-
-      return transformedResponse;
+      // Directly return the parsed result if it's already in the desired format
+      return parsed;
     } catch (error) {
       if (error instanceof Error) {
         throw error;

@@ -29,19 +29,13 @@ interface Edge {
 }
 
 export class D3Graph {
-	private rpcApi: RpcApi;
-	private sourceAddress: string;
+	private rpcApi = new RpcApi;
 	private defaultAvatarUrl: string = './default.png';
-
-	constructor(rpcUrl: string, sourceAddress: string) {
-		this.rpcApi = new RpcApi(rpcUrl);
-		this.sourceAddress = sourceAddress;
-	}
 
 	async fetchPathData(pathFromAddress: string, pathToAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
 		pathFromAddress = pathFromAddress.toLowerCase();
 		pathToAddress = pathToAddress.toLowerCase();
-		const pathfinder = new Pathfinder('/api');
+		const pathfinder = new Pathfinder;
 		const pathResponse = await pathfinder.getArgsForPath(pathFromAddress, pathToAddress, '9999999999999999999999999999999');
 		const transferSteps = pathResponse.data?.directPath?.transfers ?? [];
 

@@ -15,11 +15,7 @@ interface JsonRpcResponse {
 }
 
 export class RpcApi {
-  private rpcUrl: string;
-
-  constructor(rpcUrl: string) {
-    this.rpcUrl = rpcUrl;
-  }
+  private rpcUrl: string = 'https://circles-rpc.circlesubi.id/';
 
   async getTrustRelations(address: string): Promise<JsonRpcResponse> {
     const requestBody = {
