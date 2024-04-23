@@ -14,21 +14,30 @@
 	let graph: Graph | undefined;
 </script>
 
-<div class="flex h-full w-full">
-	<div class="node-list-pane overflow-auto bg-gray-100">
+<div class="flex h-full w-full gap-6">
+	<!-- Sidebar: NodeList -->
+	<div class="overflow-auto rounded-xl w-1/6 h-full">
 		<NodeList {cy} bind:this={nodeList} />
 	</div>
-	<div class="cursor-ew-resize bg-gray-300 w-3"></div>
-	<div class="flex flex-grow flex-col">
-		<Controls
-			bind:addNodeAddress
-			bind:commonFriendsString
-			bind:pathFromAddress
-			bind:pathToAddress
-			onAddNode={() => graph?.addNode(addNodeAddress, nodeList)}
-			onAddPath={() => graph?.addPath(pathFromAddress, pathToAddress, nodeList)}
-			onCommonFriends={() => graph?.commonFriends(commonFriendsString, nodeList)}
-		/>
-		<Graph {nodeList} bind:cy bind:this={graph} />
+
+	<!-- Right section: Controls and Graph -->
+	<div class="flex flex-col flex-grow rounded-xl gap-4">
+		<!-- Controls -->
+		<div class="bg-white rounded-xl shadow">
+			<Controls
+				bind:addNodeAddress
+				bind:commonFriendsString
+				bind:pathFromAddress
+				bind:pathToAddress
+				onAddNode={() => graph?.addNode(addNodeAddress, nodeList)}
+				onAddPath={() => graph?.addPath(pathFromAddress, pathToAddress, nodeList)}
+				onCommonFriends={() => graph?.commonFriends(commonFriendsString, nodeList)}
+			/>
+		</div>
+
+		<!-- Graph -->
+		<div class="flex-grow bg-white rounded-xl shadow overflow-auto">
+			<Graph {nodeList} bind:cy bind:this={graph} />
+		</div>
 	</div>
 </div>

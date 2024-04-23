@@ -266,4 +266,4 @@
 	}
 </script>
 
-<div id="graph" bind:this={container} class="flex-grow w-full bg-gray-200"></div>
+<div id="graph" bind:this={container} class="flex-grow w-full h-full"></div>
