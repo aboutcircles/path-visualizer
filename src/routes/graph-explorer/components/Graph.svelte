@@ -264,6 +264,15 @@
 		runLayout();
 		nodeList?.refresh();
 	}
+
+	export function generateGraph() {
+		console.log('Generating graph...');
+		// Iterate through all nodes in the cytoscape instance
+		cy.nodes().forEach((node) => {
+			const nodeId = node.id(); // Assuming id is sufficient for expanding
+			expandNode(nodeId, nodeList).catch(console.error); // Handle errors and expand each node
+		});
+	}
 </script>
 
 <div id="graph" bind:this={container} class="flex-grow w-full h-full"></div>

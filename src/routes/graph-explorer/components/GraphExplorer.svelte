@@ -8,10 +8,16 @@
 	let addNodeAddress: string = '0xde374ece6fa50e781e81aac78e811b33d16912c7';
 	let pathFromAddress: string = '';
 	let pathToAddress: string = '';
-	let commonFriendsString: string =
-		'0xde374ece6fa50e781e81aac78e811b33d16912c7, 0x3cb406Def33aeD0ABD6D02a75FEdCa8e2E8D1A2e';
+	// let commonFriendsString: string =
+	// 	'0xde374ece6fa50e781e81aac78e811b33d16912c7, 0x3cb406Def33aeD0ABD6D02a75FEdCa8e2E8D1A2e';
 	let nodeList: NodeList | undefined;
 	let graph: Graph | undefined;
+
+	const resetAll = () => {
+		nodeList?.resetFilteredNodes();
+		cy?.elements().remove();
+		cy?.reset();
+	};
 </script>
 
 <div class="flex h-full w-full gap-6">
@@ -26,12 +32,12 @@
 		<div class="bg-white rounded-xl shadow">
 			<Controls
 				bind:addNodeAddress
-				bind:commonFriendsString
 				bind:pathFromAddress
 				bind:pathToAddress
 				onAddNode={() => graph?.addNode(addNodeAddress, nodeList)}
 				onAddPath={() => graph?.addPath(pathFromAddress, pathToAddress, nodeList)}
-				onCommonFriends={() => graph?.commonFriends(commonFriendsString, nodeList)}
+				onGenerate={() => graph?.generateGraph()}
+				onReset={() => resetAll()}
 			/>
 		</div>
 
