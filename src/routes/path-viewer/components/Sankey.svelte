@@ -68,7 +68,7 @@
 	});
 </script>
 
-<div class="flex flex-col mx-auto p-4 h-full">
+<div class="flex flex-col mx-auto h-full">
 	<div class="bg-white p-4 rounded-xl shadow mb-4">
 		<h2 class="text-2xl font-bold mb-4">Generate your graph</h2>
 		<form on:submit|preventDefault={handleSubmit} class="flex flex-wrap items-end gap-2">
