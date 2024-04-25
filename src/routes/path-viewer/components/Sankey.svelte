@@ -10,8 +10,7 @@
 	const value = writable('');
 	const isLoading = writable(false);
 
-	const pathfinderURL = '/api';
-	const sankeyChart = new SankeyChart(pathfinderURL);
+	let sankeyChart = new SankeyChart();
 
 	async function handleSubmit() {
 		isLoading.set(true);
@@ -45,7 +44,7 @@
 					thickness: 30,
 					line: { color: 'black', width: 0.5 },
 					label: nodes.map((node: any) => node.name),
-					color: nodes.map((node: any) => node.color || 'blue')
+					color: nodes.map((node: any) => node.color || '#e60725')
 				},
 				link: {
 					source: links.map((link: any) => link.source),
@@ -57,7 +56,7 @@
 		];
 
 		const layout = {
-			title: 'Sankey Diagram',
+			title: '',
 			font: { size: 10 }
 		};
 
@@ -69,39 +68,71 @@
 	});
 </script>
 
-<div class="fixed top-20 inset-x-0 z-50 px-4">
-	<div
-		class="max-w-screen-xl mx-auto bg-secondary-bg-light px-5 py-4 shadow-lg rounded-full flex items-center justify-center"
-	>
-		<form on:submit|preventDefault={handleSubmit} class="flex space-x-2 items-center">
-			<input
-				type="text"
-				bind:value={$fromAddress}
-				placeholder="From Address"
-				class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-			/>
-			<input
-				type="text"
-				bind:value={$toAddress}
-				placeholder="To Address"
-				class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-			/>
-			<input
-				type="text"
-				bind:value={$value}
-				placeholder="Value"
-				class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-			/>
-			<button
-				type="submit"
-				class="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-				>Update</button
-			>
+<div class="flex flex-col mx-auto p-4 h-full">
+	<div class="bg-white p-4 rounded-xl shadow mb-4">
+		<h2 class="text-2xl font-bold mb-4">Generate your graph</h2>
+		<form on:submit|preventDefault={handleSubmit} class="flex flex-wrap items-end gap-2">
+			<div class="flex-1 m-1">
+				<label for="fromAddress" class="block text-sm font-medium text-gray-700">Path from:</label>
+				<input
+					id="fromAddress"
+					type="text"
+					bind:value={$fromAddress}
+					placeholder="From Address"
+					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+				/>
+			</div>
+			<div class="flex-1 m-1">
+				<label for="toAddress" class="block text-sm font-medium text-gray-700">Path to:</label>
+				<input
+					id="toAddress"
+					type="text"
+					bind:value={$toAddress}
+					placeholder="To Address"
+					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+				/>
+			</div>
+			<div class="flex-1 m-1">
+				<label for="value" class="block text-sm font-medium text-gray-700">Value:</label>
+				<input
+					id="value"
+					type="text"
+					bind:value={$value}
+					placeholder="Value"
+					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+				/>
+			</div>
+			<div class="flex flex-col justify-end">
+				<div class="mt-6">
+					<button
+						type="submit"
+						class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
+					>
+						Generate
+					</button>
+					<button
+						type="reset"
+						class="bg-white border-2 border-secondary-bg-light font-bold rounded-full text-secondary-bg-light px-6 py-2 hover:bg-gray-100 transition duration-300 ease-in-out mt-2"
+						on:click={() => {
+							location.reload();
+						}}
+					>
+						Reset
+					</button>
+				</div>
+			</div>
 		</form>
+	</div>
+	<div class="bg-white p-4 rounded-xl shadow flex-grow overflow-auto">
+		<h1 class="font-bold">About this graph</h1>
+		<p>
+			This graph shows the flow of value from one address to another. The width of the lines
+			indicates the amount of value transferred.
+		</p>
+		<div id="sankeyDiagram"></div>
 	</div>
 </div>
 
-<div id="sankeyDiagram" class="w-full mx-auto h-full"></div>
 {#if $isLoading}
 	<div
 		class="fixed inset-0 bg-black bg-opacity-30 backdrop-filter backdrop-blur-sm flex items-center justify-center"
