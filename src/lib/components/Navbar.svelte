@@ -23,13 +23,12 @@
 			class="text-lg text-white hover:text-gray-400 p-2 mx-4 transition duration-300 ease-in-out rounded-md"
 			>Sybil Resistance</a
 		>
-		<button class="rounded-full bg-button-bg h-10 mx-4">
-			<a
-				href="https://aboutcircles.com/"
-				target="_blank"
-				class="text-lg text-white hover:text-white p-2 mx-4 transition duration-300 ease-in-out rounded-md"
-				>Visit Website</a
-			>
-		</button>
+		<!-- <button class="rounded-full bg-button-bg h-10 mx-4"> -->
+		<a
+			href="/analytics"
+			class="text-lg text-white hover:text-gray-400 p-2 mx-4 transition duration-300 ease-in-out rounded-md"
+			>Circles Network Stats</a
+		>
+		<!-- </button> -->
 	</div>
 </nav>
