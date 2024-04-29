@@ -5,7 +5,8 @@
 
 <div class="flex flex-col items-center justify-center max-h-screen w-full p-6 gap-6">
 	<Navbar />
-	<div class="w-full overflow-auto h-full">
+	<div class="w-full overflow-auto flex-1">
+		<!-- Using flex-1 to fill the remaining space -->
 		<slot />
 	</div>
 </div>

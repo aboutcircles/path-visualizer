@@ -10,10 +10,10 @@
 
 	// List of API methods to call
 	const apiMethods = [
-		() => duneApi.getUserTransactionsToOrgs(),
-		() => duneApi.getUserTransactionsToSelectedBusinesses(),
+		// () => duneApi.getUserTransactionsToOrgs(),
+		// () => duneApi.getUserTransactionsToSelectedBusinesses(),
 		() => duneApi.getOrgSignups(),
-		() => duneApi.getB2bTransactionsPerWeek(),
+		// () => duneApi.getB2bTransactionsPerWeek(),
 		() => duneApi.getDistinctUsersTransactingPerWeek(),
 		() => duneApi.getDistinctUsersTrustingPerWeek(),
 		() => duneApi.getNewUserSignups()
@@ -74,10 +74,10 @@
 	function getChartTitle(index) {
 		// Define an array of labels for each chart
 		const chartLabels = [
-			'User Transactions to Orgs',
-			'User Transactions to Selected Businesses',
+			// 'User Transactions to Orgs',
+			// 'User Transactions to Selected Businesses',
 			'Organization Signups',
-			'B2B Transactions per Week',
+			// 'B2B Transactions per Week',
 			'Distinct Users Transacting per Week',
 			'Distinct Users Trusting per Week',
 			'New User Signups'
@@ -110,30 +110,15 @@
 
 <svelte:window on:resize={handleResize} />
 
-<div class="p-4 gap-6 bg-white rounded-xl h-full overflow-auto">
-	<h1>Circles Network Data</h1>
+<div class="p-4 gap-6 bg-white rounded-xl h-full overflow-hidden">
+	<h1 class="font-bold">Circles Network Data</h1>
 	<p>
-		Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nobis perspiciatis, dolor, placeat
-		delectus quasi quod vero eveniet harum, magni aut vitae aperiam ducimus beatae earum natus
-		voluptatibus praesentium in provident.
+		Here you can find various statistics about the Circles network, such as organization signups,
+		distinct users transacting per week, distinct users trusting per week, and new user signups.
 	</p>
-
-	<div class="charts-container">
+	<div class="grid grid-cols-2 grid-rows-2 gap-6 p-5 h-full">
 		{#each Array(apiMethods.length) as _, i}
-			<div bind:this={chartContainers[i]} class="chart-container"></div>
+			<div bind:this={chartContainers[i]} class="w-full" />
 		{/each}
 	</div>
 </div>
-
-<style>
-	.charts-container {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 20px;
-		padding: 20px;
-	}
-	.chart-container {
-		width: calc(50% - 20px); /* Subtracting gap size */
-		height: 400px;
-	}
-</style>
