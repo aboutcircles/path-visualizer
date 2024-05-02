@@ -9,3 +9,7 @@ export const config = {
   amount: process.env.AMOUNT as string,
   duneApiKey: process.env.DUNE_API_KEY as string
 };
+
+export const variables = {
+  circlesHubContract: import.meta.env.CIRCLES_HUB_CONTRACT as string,
+};

@@ -50,6 +50,7 @@
 					source: links.map((link: any) => link.source),
 					target: links.map((link: any) => link.target),
 					value: links.map((link: any) => link.value),
+					label: links.map((link: any) => link.label + ' CRC'),
 					color: links.map((link: any) => link.color || 'grey')
 				}
 			}

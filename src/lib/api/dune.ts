@@ -27,7 +27,7 @@ interface DuneApiResponse {
 }
 
 export class DuneApi {
-  private baseUrl: string = '/api/dune';  // This points to your server-side route
+  private baseUrl: string = '/api/dune';
 
   private async fetchData(queryId: number, limit: number = 1000): Promise<any[]> {
     try {
@@ -40,7 +40,7 @@ export class DuneApi {
     }
   }
 
-  // Methods for each type of data request
+
   public async getUserTransactionsToOrgs(): Promise<any[]> {
     return this.fetchData(3664143, 1000);
   }
