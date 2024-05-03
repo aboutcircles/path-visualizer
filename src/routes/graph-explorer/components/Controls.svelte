@@ -18,6 +18,8 @@
 	let enableGenerate = false;
 	let isSignedUp: any = null;
 	let addressExists: boolean = false;
+	let enableAdd: boolean = true;
+	let usernameNotFound: boolean = false;
 
 	const isUserSignedUp = async (address: string) => {
 		addressExists = false;
@@ -42,42 +44,79 @@
 	}
 
 	let startingUserList = writable<UserData[]>([]);
+	let isAdding = writable(false); // State to track if addition is in progress
 
 	const addUser = async () => {
-		if (addNodeAddress.trim() !== '') {
+		if (addNodeAddress.trim() !== '' && !get(isAdding)) {
+			isAdding.set(true); // Lock the addition process
+
 			const list = get(startingUserList);
-			console.log('list', list);
-			addressExists = list.some(
+			const addressAlreadyAdded = list.some(
 				(user) => user.safeAddress.toLowerCase() === addNodeAddress.toLowerCase()
 			);
 
-			if (addressExists) {
-				console.log('Address already added.');
-				return;
-			}
-
-			addressExists = false;
-
-			try {
-				const userData = await CirclesAPI.fetchUserData([addNodeAddress]);
-				if (userData) {
-					startingUserList.update((currentList) => {
-						return [
+			if (!addressAlreadyAdded) {
+				try {
+					const userData = await CirclesAPI.fetchUserData([addNodeAddress]);
+					if (userData && userData.length > 0) {
+						startingUserList.update((currentList) => [
 							...currentList,
 							...userData.map((user) => ({
 								id: parseInt(user.id),
-								username: user.username,
+								username: user.username || addNodeAddress, // Use the address as a fallback username
 								safeAddress: user.safeAddress
 							}))
-						];
-					});
+						]);
+					} else {
+						// If no user data is found, add the address with the address as the username
+						startingUserList.update((currentList) => [
+							...currentList,
+							{
+								id: Date.now(), // Generate a unique ID
+								username: addNodeAddress, // Use the address itself as the username
+								safeAddress: addNodeAddress
+							}
+						]);
+					}
 					onAddNode(addNodeAddress);
 					enableGenerate = true;
+				} catch (error) {
+					console.error('Error fetching user data:', error);
 				}
-			} catch (error) {
-				console.error('Error fetching user data:', error);
+			} else {
+				addressExists = true;
+				return;
 			}
+			isAdding.set(false); // Unlock the addition process
 			addNodeAddress = '';
+		}
+	};
+
+	const handleInput = async () => {
+		let address = addNodeAddress.trim();
+		usernameNotFound = false; // Reset the state each time the function is called
+
+		try {
+			if (!address.startsWith('0x')) {
+				const resolvedAddress = await CirclesAPI.resolveUsernameToAddress(address);
+				if (!resolvedAddress) {
+					throw new Error('Username not found'); // Throw an error if username cannot be resolved
+				}
+				address = resolvedAddress; // Update the address with the resolved one
+			}
+
+			const signedUp = await isUserSignedUp(address);
+			if (!signedUp) {
+				throw new Error('Address is not signed up at circles'); // Throw if address isn't signed up
+			}
+
+			// If all checks pass, update the node address and add the user
+			addNodeAddress = address;
+			addUser();
+		} catch (error) {
+			console.error(error.message);
+
+			usernameNotFound = true;
 		}
 	};
 
@@ -87,6 +126,8 @@
 		isSignedUp = null;
 		addressExists = false;
 		addNodeAddress = '';
+		enableAdd = true;
+		usernameNotFound = false;
 		onReset();
 	};
 </script>
@@ -104,6 +145,9 @@
 		{#if isSignedUp === false}
 			<p class="text-red-500">Address is not signed up at circles.</p>
 		{/if}
+		{#if usernameNotFound}
+			<p class="text-red-500">Username not found.</p>
+		{/if}
 
 		<div class="flex items-center gap-2">
 			<input
@@ -111,9 +155,10 @@
 				type="text"
 				class="flex-grow p-2 border border-gray-300 rounded-xl"
 				bind:value={addNodeAddress}
-				placeholder="Enter Ethereum address"
+				placeholder="Enter a circles name or address"
+				disabled={$startingUserList.length === 0 && !enableAdd}
 			/>
-			{#if !addNodeAddress}
+			{#if !addNodeAddress.trim() || !enableAdd}
 				<button
 					class="border-2 rounded-full bg-red-100 text-white font-bold border-red-100 px-6 py-2 cursor-not-allowed"
 					>Add user</button
@@ -121,14 +166,15 @@
 			{:else}
 				<button
 					on:click={async () => {
-						if ((await isUserSignedUp(addNodeAddress)) === false) {
-							isSignedUp = false;
-						} else {
-							addUser();
-							onAddNode(addNodeAddress);
-							enableGenerate = true;
-							isSignedUp = true;
-						}
+						await handleInput();
+						// if ((await isUserSignedUp(addNodeAddress)) === false) {
+						// 	isSignedUp = false;
+						// } else {
+						// 	addUser();
+						// 	onAddNode(addNodeAddress);
+						// 	enableGenerate = true;
+						// 	isSignedUp = true;
+						// }
 					}}
 					class="border-2 rounded-full bg-red-500 text-white font-bold border-red-500 px-6 py-2 hover:bg-red-400 transition duration-300 ease-in-out"
 					>Add user</button
@@ -137,7 +183,7 @@
 			{#if $startingUserList.length === 0 || enableGenerate === false}
 				<button
 					class="bg-blue-100 border-2 border-blue-100 font-bold rounded-full text-white px-6 py-2 cursor-not-allowed"
-					>Generate</button
+					>Expand</button
 				>
 			{:else}
 				<button
@@ -146,9 +192,12 @@
 						enableGenerate = false;
 						addressExists = false;
 						isSignedUp = null;
+						startingUserList.set([]);
+						addNodeAddress = '';
+						enableAdd = false;
 					}}
 					class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
-					>Generate</button
+					>Expand</button
 				>
 			{/if}
 

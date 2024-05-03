@@ -5,7 +5,7 @@
 	import Graph from './Graph.svelte';
 
 	let cy: cytoscape.Core | undefined;
-	let addNodeAddress: string = '0xde374ece6fa50e781e81aac78e811b33d16912c7';
+	let addNodeAddress: string = '';
 	let pathFromAddress: string = '';
 	let pathToAddress: string = '';
 
