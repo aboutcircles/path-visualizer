@@ -3,6 +3,7 @@
 	import { writable } from 'svelte/store';
 	import { SankeyChart } from '../../../lib/api/sankey';
 	import { CirclesAPI } from '../../../lib/api/gardenApi';
+	import { ethers } from 'ethers';
 
 	let plotly: any;
 	const fromAddress = writable('');
@@ -11,6 +12,13 @@
 	const isLoading = writable(false);
 
 	let sankeyChart = new SankeyChart();
+
+	let ethValue = 0; // ETH value from slider input
+	let weiValue = '0'; // Wei value computed from ETH
+
+	// Convert ETH to wei using Ethers.js
+	$: weiValue = ethers.parseEther(ethValue.toString()).toString();
+	$: $value = weiValue;
 
 	async function handleSubmit() {
 		isLoading.set(true);
@@ -94,16 +102,23 @@
 				/>
 			</div>
 			<div class="flex-1 m-1">
-				<label for="value" class="block text-sm font-medium text-gray-700">Value:</label>
+				<label for="ethValue" class="block text-sm font-medium text-gray-700">Value (in ETH):</label
+				>
 				<input
-					id="value"
-					type="text"
-					bind:value={$value}
-					placeholder="Value"
-					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+					id="ethValue"
+					type="range"
+					min="0"
+					max="10000"
+					step="1"
+					bind:value={ethValue}
+					class="mt-1 block w-full bg-gray-50"
 				/>
+				<div class="text-xs text-gray-700 mt-1">
+					Circles: {ethValue}
+				</div>
 			</div>
-			<div class="flex flex-col justify-end">
+
+			<div class="flex">
 				<div class="mt-6">
 					<button
 						type="submit"
