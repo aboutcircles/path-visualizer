@@ -54,6 +54,7 @@
 		"@duneanalytics/client-sdk": "^0.1.4",
 		"axios": "^1.6.8",
 		"chart.js": "^4.4.2",
+		"cytoscape-cose-bilkent": "^4.1.0",
 		"cytoscape-dagre": "^2.5.0",
 		"dagre": "^0.8.5",
 		"dotenv": "^16.4.5",

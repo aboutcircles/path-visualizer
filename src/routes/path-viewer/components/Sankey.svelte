@@ -13,10 +13,9 @@
 
 	let sankeyChart = new SankeyChart();
 
-	let ethValue = 0; // ETH value from slider input
-	let weiValue = '0'; // Wei value computed from ETH
+	let ethValue = 0;
+	let weiValue = '0';
 
-	// Convert ETH to wei using Ethers.js
 	$: weiValue = ethers.parseEther(ethValue.toString()).toString();
 	$: $value = weiValue;
 
@@ -43,6 +42,8 @@
 	}
 
 	function drawChart({ nodes, links }: { nodes: any; links: any }) {
+		console.log('Nodes:', nodes);
+		console.log('Links:', links);
 		const data = [
 			{
 				type: 'sankey',
@@ -102,8 +103,7 @@
 				/>
 			</div>
 			<div class="flex-1 m-1">
-				<label for="ethValue" class="block text-sm font-medium text-gray-700">Value (in ETH):</label
-				>
+				<label for="ethValue" class="block text-sm font-medium text-gray-700">Value:</label>
 				<input
 					id="ethValue"
 					type="range"

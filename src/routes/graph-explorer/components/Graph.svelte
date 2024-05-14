@@ -8,11 +8,13 @@
 	import NodeList from './NodeList.svelte';
 	import { writable } from 'svelte/store';
 	import { onMount } from 'svelte';
+	import type { Node, Edge } from '../../../lib/api/d3graph';
+	import coseBilkent from 'cytoscape-cose-bilkent';
 
 	cytoscape.use(dagre); // Ensure Dagre is registered outside component lifecycle
 
-	export let cy: cytoscape.Core;
-	export let nodeList: NodeList | undefined;
+	export let cy: cytoscape.Core | undefined = undefined;
+	export let nodeList: NodeList | undefined = undefined;
 
 	let elements: { data: { image: string; addedAt: number; id: string; label: string } }[] = [];
 	let expandedNodes = writable(new Set<string>()); // Now a Svelte store for reactivity
@@ -45,55 +47,99 @@
 
 	const dagreLayout = {
 		name: 'dagre',
-		fit: true, // Whether to fit to viewport
-		padding: 30, // Padding on fit
-		animate: true, // Whether to transition the node positions
-		animationDuration: 500, // Duration of animation in milliseconds
-		animationEasing: 'ease-out', // Easing of animation
-		spacingFactor: 1.0, // Positive spacing factor increases spacing between nodes ( >1 ), a negative factor decreases spacing ( <1 )
-		avoidOverlap: true, // Prevents node overlap, may overflow boundingBox if not enough space
-		nodeDimensionsIncludeLabels: true, // Excludes the label when calculating node bounding boxes for the layout algorithm
-		rankDir: 'LR', // 'TB' for top to bottom flow, 'LR' for left to right,
-		rankSep: 100, // the separation between each rank in the layout
-		edgeSep: 50, // the separation between each edge in the layout
-		nodeSep: 50 // the separation between each node in the layout
+		fit: true,
+		padding: 30,
+		animate: true,
+		animationDuration: 500,
+		animationEasing: 'ease-out',
+		spacingFactor: 1.0,
+		avoidOverlap: true,
+		nodeDimensionsIncludeLabels: true,
+		rankDir: 'LR',
+		rankSep: 100,
+		edgeSep: 50,
+		nodeSep: 50,
+		compound: true,
+		nestingFactor: 1.2
 	};
 
-	onMount(() => {
+	// const clusterLayout = {
+	// 	name: 'cose-bilkent',
+	// 	nodeDimensionsIncludeLabels: true,
+	// 	fit: true,
+	// 	padding: 10,
+	// 	randomize: false,
+	// 	animate: 'end',
+	// 	animationDuration: 1000,
+	// 	animationEasing: 'ease-in-out',
+	// 	idealEdgeLength: 100,
+	// 	nodeRepulsion: 4500,
+	// 	nestingFactor: 0.1,
+	// 	tilingPaddingVertical: 10,
+	// 	tilingPaddingHorizontal: 10,
+	// 	compound: true
+	// };
+
+	onMount(async () => {
 		cytoscape.use(dagre);
 		initGraph(coseLayout);
 	});
 
 	function initGraph(initialLayoutConfig: any) {
+		let nodeStyle = {
+			selector: 'node',
+			style: {
+				'background-color': '#6AAFFF',
+				label: 'data(label)',
+				'border-color': '#406897',
+				'border-width': 4,
+				width: 'mapData(degree, 1, 10, 20, 50)',
+				height: 'mapData(degree, 1, 10, 20, 50)',
+				'background-image': 'data(image)',
+				'background-fit': 'cover',
+				'text-valign': 'center',
+				'text-halign': 'center',
+				'font-size': '10px',
+				color: 'black'
+			}
+		};
+
+		if (initialLayoutConfig.name === 'dagre') {
+			nodeStyle.style['text-background-color'] = 'white';
+			nodeStyle.style['text-background-opacity'] = 1;
+			nodeStyle.style['text-background-padding'] = '3px';
+			nodeStyle.style['text-border-color'] = 'black';
+			nodeStyle.style['text-border-width'] = 1;
+			nodeStyle.style['text-border-opacity'] = 1;
+			nodeStyle.style['text-margin-y'] = -20;
+		}
+
 		cy = cytoscape({
 			container,
 			elements,
 			style: [
-				{
-					selector: 'node',
-					style: {
-						'background-color': '#6AAFFF',
-						label: 'data(label)',
-						'border-color': '#406897',
-						'border-width': 4,
-						width: 'mapData(degree, 1, 10, 20, 50)',
-						height: 'mapData(degree, 1, 10, 20, 50)',
-						'background-image': 'data(image)',
-						'background-fit': 'cover',
-						'text-valign': 'center',
-						'text-halign': 'center',
-						'font-size': '10px',
-						color: 'black'
-					}
-				},
+				nodeStyle,
 				{
 					selector: 'edge',
 					style: {
 						width: 3,
+						label: 'data(label)',
 						'line-color': '#d3d3d3',
 						'target-arrow-color': '#d3d3d3',
 						'target-arrow-shape': 'triangle',
-						'curve-style': 'bezier'
+						'curve-style': 'bezier',
+						'font-size': '8px',
+						'text-background-color': 'white',
+						'text-background-opacity': 1,
+						'text-background-padding': '3px',
+						'text-background-shape': 'roundrectangle',
+						'text-border-color': 'black',
+						'text-border-width': 1,
+						'text-border-opacity': 1,
+						'text-margin-y': -10,
+						'text-rotation': 'autorotate',
+						'text-wrap': 'wrap',
+						'text-max-width': '80px'
 					}
 				}
 			],
@@ -198,6 +244,24 @@
 		}
 	}
 
+	export let addNodeFromJson = (graphData) => {
+		cytoscape.use(coseBilkent);
+		const newElements = [
+			...graphData.nodes.map((node) => ({
+				data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
+			})),
+			...graphData.edges.map((edge) => ({
+				data: { id: edge.id, label: edge.label, source: edge.from, target: edge.to }
+			}))
+		];
+
+		initGraph(dagreLayout);
+
+		cy.add(newElements);
+		runLayout();
+		nodeList?.refresh();
+	};
+
 	export async function addNode(addNodeAddress: string, nodeList: NodeList | undefined) {
 		addNodeAddress = addNodeAddress.toLowerCase();
 		try {
@@ -223,32 +287,6 @@
 		} catch (error) {
 			console.error('Failed to add node:', error);
 		}
-	}
-
-	export async function addPath(
-		pathFromAddress: string,
-		pathToAddress: string,
-		nodeList: NodeList | undefined
-	) {
-		pathFromAddress = pathFromAddress.toLowerCase();
-		pathToAddress = pathToAddress.toLowerCase();
-
-		const nodesAndEdges = await d3Graph.fetchPathData(pathFromAddress, pathToAddress);
-
-		const nodeElements = nodesAndEdges.nodes.map((node) => ({
-			data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
-		}));
-
-		const edgeElements = nodesAndEdges.edges.map((edge) => ({
-			data: { id: edge.id, source: edge.from, target: edge.to }
-		}));
-
-		cy.add([...nodeElements, ...edgeElements]);
-
-		switchLayout(dagreLayout);
-		runLayout();
-
-		nodeList?.refresh();
 	}
 
 	export async function commonFriends(commonFriendsString: string, nodeList: NodeList | undefined) {

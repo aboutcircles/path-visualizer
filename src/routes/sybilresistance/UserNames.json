@@ -1,0 +1,26 @@
+[
+  {
+    "userId": "0x1234",
+    "username": "Frank",
+    "userMappings": {
+      "0x123": "Alice Bot",
+      "0x456": "Bob Bot",
+      "0x789": "Charlie Bot",
+      "0xabc": "David Bot",
+      "0xdef": "Eve Bot",
+      "0x5678": "Grace"
+    },
+    "relationships": {
+      "trusts": {
+        "0x123": 100,
+        "0x456": 100,
+        "0x789": 100,
+        "0xabc": 100,
+        "0xdef": 100
+      },
+      "trustedBy": {
+        "0x5678": 100
+      }
+    }
+  }
+]

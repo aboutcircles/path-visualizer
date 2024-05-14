@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { CirclesAPI } from '$lib/api/gardenApi';
-	import { ethers } from 'ethers';
-	import { onMount } from 'svelte';
 	import { get, writable } from 'svelte/store';
 
 	export let addNodeAddress: string;

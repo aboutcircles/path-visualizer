@@ -18,6 +18,18 @@
 		() => duneApi.getNewUserSignups()
 	];
 
+	function formatDate(dateStr) {
+		const parts = dateStr.split('-'); // Assuming the date format is "YYYY-MM-DD"
+		if (parts.length === 3) {
+			const year = parseInt(parts[0], 10);
+			const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-indexed
+			const day = parseInt(parts[2], 10);
+			const date = new Date(year, month, day);
+			return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+		}
+		return 'Unknown Date'; // Fallback in case the date format is incorrect
+	}
+
 	onMount(async () => {
 		apiMethods.forEach(async (apiMethod, index) => {
 			try {
@@ -32,7 +44,7 @@
 		});
 	});
 
-	function initChart(data, index, dataType) {
+	function initChart(data, index) {
 		const sortedData = sortDataByDate(data);
 		const option = {
 			title: {
@@ -42,9 +54,7 @@
 			tooltip: { trigger: 'axis' },
 			xAxis: {
 				type: 'category',
-				data: sortedData.map((item) =>
-					new Date(item.week).toLocaleString('default', { month: 'short', year: 'numeric' })
-				),
+				data: sortedData.map((item) => formatDate(item.week)),
 				axisLabel: { rotate: 45 }
 			},
 			yAxis: { type: 'value' },
@@ -56,7 +66,6 @@
 						} else if (item.businesses) {
 							return item.businesses;
 						} else {
-							// Default to 'user' if dataType is not provided or invalid
 							return item.user;
 						}
 					}),
@@ -72,23 +81,25 @@
 	}
 
 	function getChartTitle(index) {
-		// Define an array of labels for each chart
 		const chartLabels = [
-			// 'User Transactions to Orgs',
-			// 'User Transactions to Selected Businesses',
 			'Organization Signups',
-			// 'B2B Transactions per Week',
 			'Distinct Users Transacting per Week',
 			'Distinct Users Trusting per Week',
 			'New User Signups'
 		];
-
-		// Return the corresponding label for the given index
 		return chartLabels[index];
 	}
 
 	function sortDataByDate(data) {
-		return data.sort((a, b) => new Date(a.week) - new Date(b.week));
+		return data.sort((a, b) => {
+			// Manually parse dates from the format 'YYYY-MM-DD'
+			const aParts = a.week.split('-');
+			const bParts = b.week.split('-');
+			const aDate = new Date(parseInt(aParts[0]), parseInt(aParts[1]) - 1, parseInt(aParts[2]));
+			const bDate = new Date(parseInt(bParts[0]), parseInt(bParts[1]) - 1, parseInt(bParts[2]));
+
+			return aDate - bDate;
+		});
 	}
 
 	function handleResize() {
