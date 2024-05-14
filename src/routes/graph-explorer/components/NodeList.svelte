@@ -112,7 +112,7 @@
 		{#each filteredNodes as node}
 			<li
 				class="flex border-b-2 items-center px-5 py-2 {selectedNodes.has(node.data().id)
-					? 'bg-gray-100'
+					? 'bg-yellow-100 border-yellow-300'
 					: 'bg-white'} hover:bg-gray-200 cursor-pointer"
 				on:click={() => toggleNodeSelect(node.data().id)}
 				title={node.data().id}
