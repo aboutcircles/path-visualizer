@@ -70,7 +70,11 @@
 			font: { size: 10 }
 		};
 
-		plotly.newPlot('sankeyDiagram', data, layout);
+		const config = {
+			displayModeBar: false // Hide the toolbar
+		};
+
+		plotly.newPlot('sankeyDiagram', data, layout, config);
 	}
 
 	onMount(async () => {
