@@ -41,11 +41,9 @@
         }
       ],
       "relationships": {
-        "trusts": {
-        },
+        "trusts": {},
         "trustedBy": {
-          "0x1234": 100,
-          "0x5678": 100
+          "0x1234": 100
         }
       }
     },
@@ -59,11 +57,9 @@
         }
       ],
       "relationships": {
-        "trusts": {
-        },
+        "trusts": {},
         "trustedBy": {
-          "0x1234": 100,
-          "0x5678": 100
+          "0x1234": 100
         }
       }
     },
@@ -77,11 +73,9 @@
         }
       ],
       "relationships": {
-        "trusts": {
-        },
+        "trusts": {},
         "trustedBy": {
-          "0x1234": 100,
-          "0x5678": 100
+          "0x1234": 100
         }
       }
     },
@@ -95,11 +89,9 @@
         }
       ],
       "relationships": {
-        "trusts": {
-        },
+        "trusts": {},
         "trustedBy": {
-          "0x1234": 100,
-          "0x5678": 100
+          "0x1234": 100
         }
       }
     },
@@ -113,29 +105,23 @@
         }
       ],
       "relationships": {
-        "trusts": {
-        },
+        "trusts": {},
         "trustedBy": {
-          "0x1234": 100,
-          "0x5678": 100
+          "0x1234": 100
         }
       }
-    },
+    }
+  ],
+  "organizations": [
     {
-      "userId": "0x5678",
-      "totalBalance": 0,
-      "tokens": [
-        {
-          "tokenId": "0x5678",
-          "amount": 0
-        }
-      ],
+      "orgId": "0x5678",
+      "name": "Shop",
+      "tokens": [],
       "relationships": {
         "trusts": {
           "0x1234": 100
         },
-        "trustedBy": { 
-        }
+        "trustedBy": {}
       }
     }
   ]

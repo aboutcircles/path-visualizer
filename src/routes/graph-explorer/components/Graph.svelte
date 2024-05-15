@@ -6,19 +6,22 @@
 	import cytoscape from 'cytoscape';
 	import dagre from 'cytoscape-dagre';
 	import NodeList from './NodeList.svelte';
-	import { writable } from 'svelte/store';
-	import { onMount } from 'svelte';
+	import { writable, type Writable } from 'svelte/store';
+	import { onMount, afterUpdate } from 'svelte';
 	import type { Node, Edge } from '../../../lib/api/d3graph';
 	import coseBilkent from 'cytoscape-cose-bilkent';
 
 	cytoscape.use(dagre); // Ensure Dagre is registered outside component lifecycle
+	cytoscape.use(coseBilkent);
 
 	export let cy: cytoscape.Core | undefined = undefined;
 	export let nodeList: NodeList | undefined = undefined;
+	export let graphData: { nodes: Node[]; edges: Edge[] };
+	export let useDagreLayout: boolean = false;
 
 	let elements: { data: { image: string; addedAt: number; id: string; label: string } }[] = [];
-	let expandedNodes = writable(new Set<string>()); // Now a Svelte store for reactivity
-	let layoutConfig = writable<any>(null);
+	let expandedNodes: Writable<Set<string>> = writable(new Set<string>()); // Now a Svelte store for reactivity
+	let layoutConfig: Writable<any> = writable(null);
 	let container: HTMLDivElement;
 
 	const d3Graph = new D3Graph();
@@ -63,33 +66,43 @@
 		nestingFactor: 1.2
 	};
 
-	// const clusterLayout = {
-	// 	name: 'cose-bilkent',
-	// 	nodeDimensionsIncludeLabels: true,
-	// 	fit: true,
-	// 	padding: 10,
-	// 	randomize: false,
-	// 	animate: 'end',
-	// 	animationDuration: 1000,
-	// 	animationEasing: 'ease-in-out',
-	// 	idealEdgeLength: 100,
-	// 	nodeRepulsion: 4500,
-	// 	nestingFactor: 0.1,
-	// 	tilingPaddingVertical: 10,
-	// 	tilingPaddingHorizontal: 10,
-	// 	compound: true
-	// };
-
 	onMount(async () => {
-		cytoscape.use(dagre);
-		initGraph(coseLayout);
+		initGraph(useDagreLayout ? dagreLayout : coseLayout); // Use appropriate layout based on prop
 	});
+
+	afterUpdate(() => {
+		if (graphData && cy) {
+			initializeGraphWithData(graphData, useDagreLayout ? dagreLayout : coseLayout);
+		}
+	});
+
+	function initializeGraphWithData(graphData: { nodes: Node[]; edges: Edge[] }, layoutConfig: any) {
+		const newElements = [
+			...graphData.nodes.map((node) => ({
+				data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
+			})),
+			...graphData.edges.map((edge) => ({
+				data: { id: edge.id, label: edge.label, source: edge.from, target: edge.to }
+			}))
+		];
+
+		// Clear existing elements before adding new ones
+		cy.elements().remove();
+		cy.add(newElements);
+
+		runLayout(layoutConfig);
+		nodeList?.refresh();
+	}
 
 	function initGraph(initialLayoutConfig: any) {
 		let nodeStyle = {
 			selector: 'node',
 			style: {
 				'background-color': '#6AAFFF',
+				'text-wrap': 'wrap',
+				'text-max-width': '100px', // Ensures the text wraps properly
+				'white-space': 'pre', // Keeps newlines for the token details
+				'font-size': '10px', // Default font size for the label
 				label: 'data(label)',
 				'border-color': '#406897',
 				'border-width': 4,
@@ -99,8 +112,8 @@
 				'background-fit': 'cover',
 				'text-valign': 'center',
 				'text-halign': 'center',
-				'font-size': '10px',
-				color: 'black'
+				color: 'black',
+				'text-margin-y': '5px' // Adjust margin for better spacing
 			}
 		};
 
@@ -158,12 +171,12 @@
 		layoutConfig.set(newLayoutConfig); // Switch layout configuration reactively
 	}
 
-	export function runLayout() {
+	export function runLayout(layoutConfig: any = null) {
 		nodeList?.refresh();
 		cy!.nodes().forEach((node) => {
 			node.data('degree', node.degree(true));
 		});
-		$: $layoutConfig ? cy.layout($layoutConfig).run() : null;
+		$: $layoutConfig ? cy.layout(layoutConfig || $layoutConfig).run() : null;
 	}
 
 	async function toggleNodeExpansion(nodeId: string, nodeList: NodeList | undefined) {
@@ -245,21 +258,7 @@
 	}
 
 	export let addNodeFromJson = (graphData) => {
-		cytoscape.use(coseBilkent);
-		const newElements = [
-			...graphData.nodes.map((node) => ({
-				data: { id: node.id, label: node.label, image: node.image, addedAt: Date.now() }
-			})),
-			...graphData.edges.map((edge) => ({
-				data: { id: edge.id, label: edge.label, source: edge.from, target: edge.to }
-			}))
-		];
-
-		initGraph(dagreLayout);
-
-		cy.add(newElements);
-		runLayout();
-		nodeList?.refresh();
+		initializeGraphWithData(graphData, dagreLayout); // Use dagre layout for JSON data
 	};
 
 	export async function addNode(addNodeAddress: string, nodeList: NodeList | undefined) {
