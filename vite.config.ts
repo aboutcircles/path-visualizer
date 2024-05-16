@@ -9,9 +9,9 @@ export default defineConfig({
 	},
 	server: {
 		proxy: {
-			// Proxy requests from /api to https://pathfinder.circlesubi.id
+			// Proxy requests from /api to https://pathfinder.aboutcircles.com
 			// '/api': {
-			// 	target: 'https://pathfinder.circlesubi.id',
+			// 	target: 'https://pathfinder.aboutcircles.com',
 			// 	changeOrigin: true, // this is necessary for virtual hosted sites
 			// 	rewrite: (path) => path.replace(/^\/api/, '') // remove /api prefix before making the request
 			// },

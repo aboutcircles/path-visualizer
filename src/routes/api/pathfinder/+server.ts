@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
   };
 
   try {
-    const response = await fetch('https://pathfinder.circlesubi.id/', {
+    const response = await fetch('https://pathfinder.aboutcircles.com/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
