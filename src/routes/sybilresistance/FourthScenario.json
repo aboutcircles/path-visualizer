@@ -1,0 +1,128 @@
+{
+  "userMappings": {
+    "0x1234": "Alice",
+    "0x5678": "Shop",
+    "0x123": "FakeAccount1",
+    "0x456": "FakeAccount2",
+    "0x789": "FakeAccount3",
+    "0xabc": "FakeAccount4",
+    "0xdef": "FakeAccount5"
+  },
+  "users": [
+    {
+      "userId": "0x1234",
+      "totalBalance": 0,
+      "tokens": [
+        {
+          "tokenId": "0x1234",
+          "amount": 0
+        }
+      ],
+      "relationships": {
+        "trusts": {
+          "0x123": 100,
+          "0x456": 100,
+          "0x789": 100,
+          "0xabc": 100,
+          "0xdef": 100
+        },
+        "trustedBy": {
+          "0x5678": 100
+        }
+      }
+    },
+    {
+      "userId": "0x123",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0x123",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {
+          "0x1234": 100
+        }
+      }
+    },
+    {
+      "userId": "0x456",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0x456",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {
+          "0x1234": 100
+        }
+      }
+    },
+    {
+      "userId": "0x789",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0x789",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {
+          "0x1234": 100
+        }
+      }
+    },
+    {
+      "userId": "0xabc",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0xabc",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {
+          "0x1234": 100
+        }
+      }
+    },
+    {
+      "userId": "0xdef",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0xdef",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {
+          "0x1234": 100
+        }
+      }
+    }
+  ],
+  "organizations": [
+    {
+      "orgId": "0x5678",
+      "name": "Shop",
+      "tokens": [],
+      "relationships": {
+        "trusts": {
+          "0x1234": 100
+        },
+        "trustedBy": {}
+      }
+    }
+  ]
+}

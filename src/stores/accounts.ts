@@ -45,7 +45,9 @@ const getAddressFromName = (nameOrAddress: string, mappings: Record<string, stri
 export const createAccountsStore = (initialData: AccountData): Writable<AccountData> & {
   changeTrust: (fromNameOrAddress: string, toNameOrAddress: string, trustLevel: number) => void;
   sendTokens: (fromNameOrAddress: string, toNameOrAddress: string, amount: number) => void;
-  reset: () => void;
+  reset: (data: AccountData) => void;
+  addUser: (userName: string) => void;
+  addOrganization: (orgName: string) => void;
 } => {
   const { subscribe, set, update } = writable(initialData);
 
@@ -141,8 +143,37 @@ export const createAccountsStore = (initialData: AccountData): Writable<AccountD
         return data;
       });
     },
-    reset: (): void => {
-      set(JSON.parse(JSON.stringify(initialData))); // Ensure a deep copy of initialData is set
+    addUser: (userName: string): void => {
+      update(data => {
+        const newUserId = `0x${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+        const newUser: User = {
+          userId: newUserId,
+          totalBalance: 50,
+          tokens: [{ tokenId: newUserId, amount: 50 }],
+          relationships: { trusts: {}, trustedBy: {} },
+        };
+        data.userMappings[newUserId] = userName;
+        data.users.push(newUser);
+        return data;
+      });
+    },
+    addOrganization: (orgName: string): void => {
+      update(data => {
+        const newOrgId = `0x${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+        const newOrg: Organization = {
+          orgId: newOrgId,
+          name: orgName,
+          tokens: [],
+          relationships: { trusts: {}, trustedBy: {} },
+        };
+        data.userMappings[newOrgId] = orgName;
+        data.organizations.push(newOrg);
+        return data;
+      });
+    },
+    reset: (data: AccountData): void => {
+      console.log('Resetting accounts store with data: ', data);
+      set(JSON.parse(JSON.stringify(data))); // Ensure a deep copy of initialData is set
     }
   };
 };

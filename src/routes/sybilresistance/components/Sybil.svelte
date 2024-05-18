@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import type { Node, Edge } from '../../../lib/api/d3graph';
 	import Graph from '../../graph-explorer/components/Graph.svelte';
-	import accounts from './../Accounts.json';
 	import { createAccountsStore } from './../../../stores/accounts';
+	import InitialAccounts from './../InitialAccounts.json';
+
+	const initialAccounts = InitialAccounts;
 
 	interface Token {
 		tokenId: string;
@@ -35,22 +36,69 @@
 		organizations: Organization[];
 	}
 
-	let data: AccountsData = accounts;
-	const accountsStore = createAccountsStore(data);
+	const steps = {
+		0: {
+			title: 'Welcome to the Sybil Resistance Demo',
+			description: "Here we have Alice. Alice just signed up at Circles. Click 'Next' to proceed.",
+			buttonText: 'Next'
+		},
+		1: {
+			title: 'Alice wants to buy something from a shop',
+			description: "Let's see what happens when Alice tries to send CRC to the shop.",
+			buttonText: 'Send'
+		},
+		2: {
+			title: 'Now that the Shop trusts Alice, she can send her CRC to the Shop.',
+			description: "Click 'Send' to proceed.",
+			buttonText: 'Send'
+		},
+		3: {
+			title: "As you see, the Shop can only receive Alice's personal CRC.",
+			description: "Click 'Next' to proceed.",
+			buttonText: 'Next'
+		},
+		4: {
+			title: 'Now Alice spent all her CRC but wants to buy more stuff from the Shop.',
+			description:
+				"To get more CRC, Alice creates 5 fake accounts. Click 'Next' to send all Fake CRC to Alice.",
+			buttonText: 'Next'
+		},
+		5: {
+			title:
+				'Now Alice has a total Amount of 250 CRC. Let’s see what happens when Alice tries to send them to the shop to buy more stuff.',
+			description: '',
+			buttonText: 'Send'
+		},
+		error1: {
+			errorDescription:
+				'The transaction failed because the Shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
+			nextAction: "Let's initialize a trust connection."
+		},
+		error5: {
+			errorDescription:
+				'The transaction failed because the Shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
+			finalNote:
+				'This is why you should only trust Circles users you know in real life to ensure they are trustworthy and not bad actors in the network.',
+			buttonText: 'Reset'
+		}
+	};
+
+	let currentStep = 0;
+	const accountsStore = createAccountsStore(JSON.parse(JSON.stringify(initialAccounts))); // Deep copy for initial state
 
 	let graphKey = 0;
-	let graphData = transformAccountsToGraphData(accounts);
-	let firstStepCompleted = false;
-	let secondStepCompleted = false;
+	let graphData = transformAccountsToGraphData(get(accountsStore), currentStep === 0);
 	let errorMessage = '';
 
-	function transformAccountsToGraphData(data: AccountsData) {
+	function transformAccountsToGraphData(data: AccountsData, initialState: boolean = false) {
 		const { userMappings, users, organizations } = data;
 		let nodes: Node[] = [];
 		let edges: Edge[] = [];
 
-		// Function to create node labels with total amount and individual tokens
-		function createLabel(name: string, tokens: Token[]): string {
+		function createLabel(name: string, tokens: Token[], initialState: boolean): string {
+			if (initialState) {
+				return name;
+			}
 			const totalAmount = tokens.reduce((sum, token) => sum + token.amount, 0);
 			const tokenDetails = tokens
 				.map((token) => {
@@ -62,85 +110,262 @@
 			return `${name} \nTotal: ${totalAmount}${tokenDetails}`;
 		}
 
-		// Add user nodes
 		users.forEach((user) => {
 			const username = userMappings[user.userId];
-			const label = createLabel(username, user.tokens);
+			const label = createLabel(username, user.tokens, initialState);
 			nodes.push({
 				id: user.userId,
 				label: label,
 				image: './default.png'
 			});
-
-			Object.entries(user.relationships.trusts).forEach(([id, _]) => {
-				edges.push({
-					id: `${user.userId}-${id}`,
-					label: `${username} is trusting ${userMappings[id]}`,
-					from: user.userId,
-					to: id
-				});
-			});
-
-			Object.entries(user.relationships.trustedBy).forEach(([id, _]) => {
-				edges.push({
-					id: `${id}-${user.userId}`,
-					label: `${userMappings[id]} is trusting ${username}`,
-					from: id,
-					to: user.userId
-				});
-			});
 		});
 
-		// Add organization nodes
 		organizations.forEach((org) => {
 			const orgName = org.name;
-			const label = createLabel(orgName, org.tokens);
+			const label = createLabel(orgName, org.tokens, initialState);
 			nodes.push({
 				id: org.orgId,
 				label: label,
 				image: './default.png'
 			});
+		});
 
-			Object.entries(org.relationships.trusts).forEach(([id, _]) => {
-				edges.push({
-					id: `${org.orgId}-${id}`,
-					label: `${orgName} is trusting ${userMappings[id]}`,
-					from: org.orgId,
-					to: id
+		if (!initialState) {
+			users.forEach((user) => {
+				Object.entries(user.relationships.trusts).forEach(([id, _]) => {
+					edges.push({
+						id: `${user.userId}-${id}`,
+						label: `${userMappings[user.userId]} trusts ${userMappings[id]}`,
+						from: user.userId,
+						to: id
+					});
 				});
 			});
 
-			// Organizations should not be trusted by anyone, so no edges for trustedBy
-		});
+			organizations.forEach((org) => {
+				Object.entries(org.relationships.trusts).forEach(([id, _]) => {
+					edges.push({
+						id: `${org.orgId}-${id}`,
+						label: `${org.name} trusts ${userMappings[id]}`,
+						from: org.orgId,
+						to: id
+					});
+				});
+			});
+		}
 
 		return { nodes, edges };
 	}
 
-	function sendAllBalancesToFrank() {
+	function nextStep() {
+		console.log(`Moving to next step from currentStep ${currentStep}`);
+		switch (currentStep) {
+			case 1:
+				if (errorMessage) {
+					initializeTrustConnection();
+				} else {
+					currentStep += 1;
+					graphData = transformAccountsToGraphData(get(accountsStore), currentStep === 0);
+					graphKey += 1;
+				}
+				break;
+			case 3:
+				addFakeAccounts();
+				break;
+			case 4:
+				sendAllFakeCrcToAlice();
+				break;
+			case 5:
+				sendAllBalancesFromAliceToShopWithFakeAccounts();
+				break;
+			default:
+				currentStep += 1;
+				if (currentStep === 1) {
+					addShop();
+				}
+				graphData = transformAccountsToGraphData(get(accountsStore), currentStep === 0);
+				graphKey += 1;
+				console.log(`Updated currentStep: ${currentStep}`);
+				console.log(`graphData: ${JSON.stringify(graphData)}`);
+				break;
+		}
+	}
+
+	function sendAllBalancesFromAliceToShop() {
+		errorMessage = '';
+		try {
+			const aliceId = Object.keys(get(accountsStore).userMappings).find(
+				(key) => get(accountsStore).userMappings[key] === 'Alice'
+			);
+			const shopId = Object.keys(get(accountsStore).userMappings).find(
+				(key) => get(accountsStore).userMappings[key] === 'Shop'
+			);
+			if (!aliceId) {
+				throw new Error('Alice not found in user mappings.');
+			}
+			if (!shopId) {
+				throw new Error('Shop not found in user mappings.');
+			}
+
+			const alice = get(accountsStore).users.find((u) => u.userId === aliceId);
+			if (!alice) {
+				throw new Error('Alice not found among users.');
+			}
+
+			let totalAmount = 0;
+			alice.tokens.forEach((token) => {
+				totalAmount += token.amount;
+			});
+
+			accountsStore.sendTokens('Alice', 'Shop', totalAmount);
+
+			graphKey += 1;
+			graphData = transformAccountsToGraphData(get(accountsStore));
+			currentStep += 1; // Move to the next step after sending balances
+		} catch (error) {
+			errorMessage = (error as Error).message;
+		}
+	}
+
+	function sendOnlyAlicesTokensToShop() {
+		errorMessage = '';
+		try {
+			const aliceId = Object.keys(get(accountsStore).userMappings).find(
+				(key) => get(accountsStore).userMappings[key] === 'Alice'
+			);
+			const shopId = Object.keys(get(accountsStore).userMappings).find(
+				(key) => get(accountsStore).userMappings[key] === 'Shop'
+			);
+			if (!aliceId) {
+				throw new Error('Alice not found in user mappings.');
+			}
+			if (!shopId) {
+				throw new Error('Shop not found in user mappings.');
+			}
+
+			const alice = get(accountsStore).users.find((u) => u.userId === aliceId);
+			if (!alice) {
+				throw new Error('Alice not found among users.');
+			}
+
+			let totalAmount = 0;
+			alice.tokens.forEach((token) => {
+				if (token.tokenId === aliceId) {
+					totalAmount += token.amount;
+				}
+			});
+
+			if (totalAmount === 0) {
+				throw new Error('Alice does not hold any tokens of her own.');
+			}
+
+			accountsStore.sendTokens('Alice', 'Shop', totalAmount);
+
+			graphKey += 1;
+			graphData = transformAccountsToGraphData(get(accountsStore));
+			currentStep += 1; // Move to the next step after sending balances
+		} catch (error) {
+			errorMessage = (error as Error).message;
+		}
+	}
+
+	function initializeTrustConnection() {
 		errorMessage = '';
 		try {
 			accountsStore.update((data) => {
-				const frankId = Object.keys(data.userMappings).find(
-					(key) => data.userMappings[key] === 'Frank'
+				const aliceId = Object.keys(data.userMappings).find(
+					(key) => data.userMappings[key] === 'Alice'
 				);
-				if (!frankId) {
-					throw new Error('Frank not found in user mappings.');
+				const shopId = Object.keys(data.userMappings).find(
+					(key) => data.userMappings[key] === 'Shop'
+				);
+				if (!aliceId) {
+					throw new Error('Alice not found in user mappings.');
+				}
+				if (!shopId) {
+					throw new Error('Shop not found in user mappings.');
+				}
+
+				const shop = data.organizations.find((org) => org.orgId === shopId);
+				if (!shop) {
+					throw new Error('Shop not found among organizations.');
+				}
+
+				shop.relationships.trusts[aliceId] = 100;
+
+				return data;
+			});
+
+			graphKey += 1;
+			graphData = transformAccountsToGraphData(get(accountsStore));
+			currentStep += 1; // Move to the next step after establishing trust
+		} catch (error) {
+			errorMessage = (error as Error).message;
+		}
+	}
+
+	function addShop() {
+		accountsStore.addOrganization('Shop');
+	}
+
+	function addFakeAccounts() {
+		for (let i = 1; i <= 5; i++) {
+			const fakeUserName = `FakeAccount${i}`;
+			accountsStore.addUser(fakeUserName);
+			accountsStore.update((data) => {
+				const aliceId = Object.keys(data.userMappings).find(
+					(key) => data.userMappings[key] === 'Alice'
+				);
+				if (aliceId) {
+					const alice = data.users.find((u) => u.userId === aliceId);
+					if (alice) {
+						const fakeUser = data.users.find(
+							(u) =>
+								u.userId ===
+								Object.keys(data.userMappings).find(
+									(key) => data.userMappings[key] === fakeUserName
+								)
+						);
+						if (fakeUser) {
+							alice.relationships.trusts[fakeUser.userId] = 100;
+							fakeUser.relationships.trustedBy[aliceId] = 100;
+						}
+					}
+				}
+				return data;
+			});
+		}
+		graphKey += 1;
+		graphData = transformAccountsToGraphData(get(accountsStore));
+		currentStep += 1;
+		console.log(`Fake accounts added. Updated currentStep: ${currentStep}`);
+	}
+
+	function sendAllFakeCrcToAlice() {
+		errorMessage = '';
+		try {
+			accountsStore.update((data) => {
+				const aliceId = Object.keys(data.userMappings).find(
+					(key) => data.userMappings[key] === 'Alice'
+				);
+				if (!aliceId) {
+					throw new Error('Alice not found in user mappings.');
 				}
 
 				data.users.forEach((user) => {
-					if (user.userId !== frankId) {
+					if (user.userId !== aliceId) {
 						user.tokens.forEach((token) => {
-							const frank = data.users.find((u) => u.userId === frankId);
-							if (!frank) {
-								throw new Error('Frank not found among users.');
+							const alice = data.users.find((u) => u.userId === aliceId);
+							if (!alice) {
+								throw new Error('Alice not found among users.');
 							}
-							const frankToken = frank.tokens.find((t) => t.tokenId === token.tokenId);
-							if (frankToken) {
-								frankToken.amount += token.amount;
+							const aliceToken = alice.tokens.find((t) => t.tokenId === token.tokenId);
+							if (aliceToken) {
+								aliceToken.amount += token.amount;
 							} else {
-								frank.tokens.push({ tokenId: token.tokenId, amount: token.amount });
+								alice.tokens.push({ tokenId: token.tokenId, amount: token.amount });
 							}
-							frank.totalBalance += token.amount;
+							alice.totalBalance += token.amount;
 							token.amount = 0;
 						});
 						user.totalBalance = 0;
@@ -150,121 +375,103 @@
 				return data;
 			});
 
-			// Force a re-render by updating the key and re-initializing graphData
 			graphKey += 1;
 			graphData = transformAccountsToGraphData(get(accountsStore));
-			firstStepCompleted = true;
+			currentStep += 1; // Move to the next step after sending balances
+			console.log(`All fake CRC sent to Alice. Updated currentStep: ${currentStep}`);
 		} catch (error) {
 			errorMessage = (error as Error).message;
 		}
 	}
 
-	function sendAllBalancesFromFrankToShop() {
+	function sendAllBalancesFromAliceToShopWithFakeAccounts() {
 		errorMessage = '';
 		try {
-			const frankId = Object.keys(get(accountsStore).userMappings).find(
-				(key) => get(accountsStore).userMappings[key] === 'Frank'
+			const aliceId = Object.keys(get(accountsStore).userMappings).find(
+				(key) => get(accountsStore).userMappings[key] === 'Alice'
 			);
 			const shopId = Object.keys(get(accountsStore).userMappings).find(
 				(key) => get(accountsStore).userMappings[key] === 'Shop'
 			);
-			if (!frankId) {
-				throw new Error('Frank not found in user mappings.');
+			if (!aliceId) {
+				throw new Error('Alice not found in user mappings.');
 			}
 			if (!shopId) {
 				throw new Error('Shop not found in user mappings.');
 			}
 
-			const frank = get(accountsStore).users.find((u) => u.userId === frankId);
-			if (!frank) {
-				throw new Error('Frank not found among users.');
+			const alice = get(accountsStore).users.find((u) => u.userId === aliceId);
+			if (!alice) {
+				throw new Error('Alice not found among users.');
 			}
 
 			let totalAmount = 0;
-			frank.tokens.forEach((token) => {
+			alice.tokens.forEach((token) => {
 				totalAmount += token.amount;
 			});
 
-			accountsStore.sendTokens('Frank', 'Shop', totalAmount);
+			accountsStore.sendTokens('Alice', 'Shop', totalAmount);
 
-			// Force a re-render by updating the key and re-initializing graphData
 			graphKey += 1;
 			graphData = transformAccountsToGraphData(get(accountsStore));
+			currentStep += 1; // Move to the next step after trying to send balances
 		} catch (error) {
 			errorMessage = (error as Error).message;
-		} finally {
-			secondStepCompleted = true;
 		}
 	}
 
-	function sendOnlyFranksTokensToShop() {
+	function resetState() {
+		currentStep = 0;
 		errorMessage = '';
-		try {
-			const frankId = Object.keys(get(accountsStore).userMappings).find(
-				(key) => get(accountsStore).userMappings[key] === 'Frank'
-			);
-			const shopId = Object.keys(get(accountsStore).userMappings).find(
-				(key) => get(accountsStore).userMappings[key] === 'Shop'
-			);
-			if (!frankId) {
-				throw new Error('Frank not found in user mappings.');
-			}
-			if (!shopId) {
-				throw new Error('Shop not found in user mappings.');
-			}
-
-			const frank = get(accountsStore).users.find((u) => u.userId === frankId);
-			if (!frank) {
-				throw new Error('Frank not found among users.');
-			}
-
-			let totalAmount = 0;
-			frank.tokens.forEach((token) => {
-				if (token.tokenId === frankId) {
-					totalAmount += token.amount;
-				}
-			});
-
-			if (totalAmount === 0) {
-				throw new Error('Frank does not hold any tokens of his own.');
-			}
-
-			accountsStore.sendTokens('Frank', 'Shop', totalAmount);
-
-			// Force a re-render by updating the key and re-initializing graphData
-			graphKey += 1;
-			graphData = transformAccountsToGraphData(get(accountsStore));
-		} catch (error) {
-			errorMessage = (error as Error).message;
-		}
+		accountsStore.reset(initialAccounts);
+		graphData = transformAccountsToGraphData(JSON.parse(JSON.stringify(initialAccounts)), true); // Use deep copy here
+		graphKey += 1;
 	}
 </script>
 
 <div class="flex flex-col mx-full h-full">
 	<div class="bg-white p-4 rounded-xl shadow mb-4 h-1/4">
-		<h2>
-			{firstStepCompleted
-				? secondStepCompleted
-					? "As you see, the Shop can only receive Frank's personal CRC. Let's send only Frank's token to the Shop."
-					: "Let's try to send all CRC Frank holds to the Shop"
-				: "Let's send all fake accounts CRC to Frank."}
-		</h2>
-		<p>
-			{firstStepCompleted
-				? secondStepCompleted
-					? "Frank holds his personal CRC and the CRC from fake accounts. Now, let's send only Frank's tokens to the Shop."
-					: "Frank holds all the CRC from fake accounts. Now, let's try sending all the CRC Frank holds to the Shop."
-				: "To consolidate all CRC from fake accounts into Frank's account, click the 'Send' button below."}
-		</p>
+		<h2>{steps[currentStep]?.title}</h2>
+		<p>{steps[currentStep]?.description}</p>
 		<button
-			on:click={firstStepCompleted
-				? secondStepCompleted
-					? sendOnlyFranksTokensToShop
-					: sendAllBalancesFromFrankToShop
-				: sendAllBalancesToFrank}>Send</button
+			class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
+			on:click={() => {
+				switch (currentStep) {
+					case 1:
+						if (!errorMessage) {
+							sendAllBalancesFromAliceToShop();
+						} else {
+							initializeTrustConnection();
+						}
+						break;
+					case 2:
+						sendOnlyAlicesTokensToShop();
+						break;
+					case 5:
+						if (!errorMessage) {
+							sendAllBalancesFromAliceToShopWithFakeAccounts();
+						} else {
+							resetState();
+						}
+						break;
+					default:
+						nextStep();
+						break;
+				}
+			}}
 		>
+			{errorMessage && currentStep === 5 ? steps.error5.buttonText : steps[currentStep]?.buttonText}
+		</button>
 		{#if errorMessage}
 			<p style="color: red;">{errorMessage}</p>
+			{#if currentStep === 1}
+				<p>{steps.error1.errorDescription}</p>
+				<p>{steps.error1.nextAction}</p>
+			{/if}
+			{#if currentStep === 5}
+				<p>{steps.error5.errorDescription}</p>
+				<p>{steps.error5.finalNote}</p>
+			{/if}
 		{/if}
 	</div>
 	<div class="bg-white p-4 rounded-xl shadow mb-4 h-full">

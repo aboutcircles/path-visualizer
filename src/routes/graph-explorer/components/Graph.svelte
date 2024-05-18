@@ -52,7 +52,7 @@
 		name: 'dagre',
 		fit: true,
 		padding: 30,
-		animate: true,
+		animate: false,
 		animationDuration: 500,
 		animationEasing: 'ease-out',
 		spacingFactor: 1.0,

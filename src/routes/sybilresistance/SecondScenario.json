@@ -1,0 +1,33 @@
+{
+  "userMappings": {
+    "0x1234": "Alice",
+    "0x5678": "Shop"
+  },
+  "users": [
+    {
+      "userId": "0x1234",
+      "totalBalance": 50,
+      "tokens": [
+        {
+          "tokenId": "0x1234",
+          "amount": 50
+        }
+      ],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {}
+      }
+    }
+  ],
+  "organizations": [
+    {
+      "orgId": "0x5678",
+      "name": "Shop",
+      "tokens": [],
+      "relationships": {
+        "trusts": {},
+        "trustedBy": {}
+      }
+    }
+  ]
+}

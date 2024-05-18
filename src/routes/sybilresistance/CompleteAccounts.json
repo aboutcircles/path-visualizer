@@ -1,7 +1,7 @@
 {
   "userMappings": {
-    "0x1234": "Frank",
-    "0x123": "Alice",
+    "0x1234": "Alice",
+    "0x123": "Frank",
     "0x456": "Bob",
     "0x789": "Charlie",
     "0xabc": "David",
