@@ -54,7 +54,7 @@
 		} else {
 			selectedNodes.add(id);
 		}
-		selectedNodes = selectedNodes;
+		selectedNodes = new Set(selectedNodes);
 		highlightNodes(cy, selectedNodes);
 	}
 
@@ -76,19 +76,19 @@
 			const neighbors = node.neighborhood().nodes();
 
 			node.style({
-				'background-color': '#FFFFAA', // Highlight color for selected nodes
-				'border-color': '#FFD700' // Highlight border color for selected nodes
+				'background-color': '#DF6552', // Highlight color for selected nodes
+				'border-color': '#DF6552' // Highlight border color for selected nodes
 			});
 
 			neighbors.style({
-				'background-color': '#FFFFAA', // Different color for neighbor nodes
-				'border-color': '#FFD700'
+				'background-color': '#DF6552', // Different color for neighbor nodes
+				'border-color': '#DF6552'
 			});
 
 			node.connectedEdges().style({
-				'line-color': '#FFD700', // Highlight color for edges connected to selected nodes
+				'line-color': '#DF6552', // Highlight color for edges connected to selected nodes
 				width: 5,
-				'target-arrow-color': '#FFD700'
+				'target-arrow-color': '#DF6552'
 			});
 		});
 	}
@@ -107,7 +107,7 @@
 			on:input={() => setNodeList()}
 		/>
 	</div>
-	<p class="gap-3 p-3">Select somone to locate them in the generated graph</p>
+	<p class="gap-3 p-3">Select someone to locate them in the generated graph</p>
 	<ul class="overflow-auto p-0 mx-4" style="flex-grow: 1;">
 		{#each filteredNodes as node}
 			<li
@@ -127,3 +127,13 @@
 		{/each}
 	</ul>
 </div>
+
+<style>
+	/* Additional CSS for consistent styling */
+	.bg-yellow-100 {
+		background-color: #ffdabe;
+	}
+	.border-yellow-300 {
+		border-color: #df6552;
+	}
+</style>

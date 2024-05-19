@@ -92,14 +92,27 @@
 					thickness: 30,
 					line: { color: 'black', width: 0.5 },
 					label: nodes.map((node: any) => node.name),
-					color: nodes.map((node: any) => node.color || '#e60725')
+					color: nodes.map((node: any) => node.color || '#DF6552')
 				},
 				link: {
 					source: links.map((link: any) => link.source),
 					target: links.map((link: any) => link.target),
 					value: links.map((link: any) => link.value),
 					label: links.map((link: any) => link.label + ' CRC'),
-					color: links.map((link: any) => link.color || 'grey')
+					color: links.map((link: any) => link.color || 'grey'),
+					texttemplate: '%{label}',
+					textposition: 'inside',
+					font: {
+						color: 'black',
+						size: 10,
+						family: 'Arial, sans-serif'
+					},
+					hoverlabel: {
+						bgcolor: 'white',
+						font: {
+							color: 'black'
+						}
+					}
 				}
 			}
 		];

@@ -85,9 +85,19 @@
 
 	afterUpdate(() => {
 		if (graphData && cy) {
-			initializeGraphWithData(graphData, useDagreLayout ? dagreLayout : coseLayout);
+			initializeGraphWithData(
+				graphData,
+				useDagreLayout ? getDagreLayout(graphData.edges) : coseLayout
+			);
 		}
 	});
+
+	function getDagreLayout(edges: Edge[]) {
+		return {
+			...dagreLayout,
+			rankDir: edges.length === 0 ? 'LR' : dagreLayout.rankDir // Set to left-to-right if no edges
+		};
+	}
 
 	function initializeGraphWithData(graphData: { nodes: Node[]; edges: Edge[] }, layoutConfig: any) {
 		const newElements = [
@@ -123,10 +133,14 @@
 				height: 'mapData(degree, 1, 10, 20, 50)',
 				'background-image': 'data(image)',
 				'background-fit': 'cover',
-				'text-valign': 'center',
+				'text-valign': 'bottom', // Align text at the bottom of the node
 				'text-halign': 'center',
 				color: 'black',
-				'text-margin-y': '5px' // Adjust margin for better spacing
+				'text-margin-y': 5, // Adjust margin for better spacing
+				'text-background-color': 'lightgrey',
+				'text-background-opacity': 0.7,
+				'text-background-shape': 'roundrectangle',
+				'text-border-width': 0
 			}
 		};
 
@@ -166,6 +180,16 @@
 						'text-rotation': 'autorotate',
 						'text-wrap': 'wrap',
 						'text-max-width': '80px'
+					}
+				},
+				{
+					selector: 'node:selected',
+					style: {
+						'border-color': '#DF6552',
+						'text-background-color': '#FFDABE',
+						'text-background-opacity': 1,
+						'text-background-padding': '2px',
+						'text-background-shape': 'roundrectangle'
 					}
 				}
 			],
@@ -266,7 +290,7 @@
 	}
 
 	export let addNodeFromJson = (graphData) => {
-		initializeGraphWithData(graphData, dagreLayout); // Use dagre layout for JSON data
+		initializeGraphWithData(graphData, getDagreLayout(graphData.edges)); // Use adjusted dagre layout for JSON data
 	};
 
 	export async function addNode(addNodeAddress: string, nodeList: NodeList | undefined) {
