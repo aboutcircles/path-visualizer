@@ -145,13 +145,14 @@
 		};
 
 		if (initialLayoutConfig.name === 'dagre') {
+			nodeStyle.style['text-valign'] = 'bottom';
 			nodeStyle.style['text-background-color'] = 'white';
 			nodeStyle.style['text-background-opacity'] = 1;
 			nodeStyle.style['text-background-padding'] = '3px';
 			nodeStyle.style['text-border-color'] = 'black';
 			nodeStyle.style['text-border-width'] = 1;
 			nodeStyle.style['text-border-opacity'] = 1;
-			nodeStyle.style['text-margin-y'] = -20;
+			nodeStyle.style['text-margin-y'] = 5;
 		}
 
 		cy = cytoscape({
