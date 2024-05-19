@@ -2,14 +2,22 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { SankeyChart } from '../../../lib/api/sankey';
-	import { CirclesAPI } from '../../../lib/api/gardenApi';
+	import { CirclesAPI, type UserData } from '../../../lib/api/gardenApi';
 	import { ethers } from 'ethers';
 
 	let plotly: any;
 	const fromAddress = writable('');
 	const toAddress = writable('');
+	const fromUsername = writable(''); // Store for selected username for fromAddress
+	const fromUserAvatar = writable(''); // Store for selected avatar for fromAddress
+	const toUsername = writable(''); // Store for selected username for toAddress
+	const toUserAvatar = writable(''); // Store for selected avatar for toAddress
 	const value = writable('');
 	const isLoading = writable(false);
+	const searchResults = writable<UserData[]>([]);
+	const activeInput = writable<'from' | 'to' | null>(null); // Track active input field
+
+	const DEFAULT_AVATAR = '/default.png'; // Path to the default avatar image
 
 	let sankeyChart = new SankeyChart();
 
@@ -18,6 +26,9 @@
 
 	$: weiValue = ethers.parseEther(ethValue.toString()).toString();
 	$: $value = weiValue;
+
+	// Computed property to determine if the Generate button should be enabled
+	$: isGenerateDisabled = !$fromUsername || !$toUsername || ethValue === 0;
 
 	async function handleSubmit() {
 		isLoading.set(true);
@@ -39,6 +50,34 @@
 			console.error('Failed to generate Sankey data:', error);
 		}
 		isLoading.set(false);
+	}
+
+	async function searchUsers(query: string, inputType: 'from' | 'to') {
+		if (query.length > 0) {
+			try {
+				const results = await CirclesAPI.searchUsers(query);
+				searchResults.set(results);
+				activeInput.set(inputType); // Set the active input field
+			} catch (error) {
+				console.error('Failed to search users:', error);
+			}
+		} else {
+			searchResults.set([]);
+			activeInput.set(null); // Clear active input field
+		}
+	}
+
+	function selectUser(result: UserData, inputType: 'from' | 'to') {
+		if (inputType === 'from') {
+			fromAddress.set(result.safeAddress);
+			fromUsername.set(result.username);
+			fromUserAvatar.set(result.avatarUrl || DEFAULT_AVATAR);
+		} else {
+			toAddress.set(result.safeAddress);
+			toUsername.set(result.username);
+			toUserAvatar.set(result.avatarUrl || DEFAULT_AVATAR);
+		}
+		activeInput.set(null);
 	}
 
 	function drawChart({ nodes, links }: { nodes: any; links: any }) {
@@ -86,25 +125,87 @@
 	<div class="bg-white p-4 rounded-xl shadow mb-4">
 		<h2 class="text-2xl font-bold mb-4">Generate your graph</h2>
 		<form on:submit|preventDefault={handleSubmit} class="flex flex-wrap items-end gap-2">
-			<div class="flex-1 m-1">
-				<label for="fromAddress" class="block text-sm font-medium text-gray-700">Path from:</label>
+			<div class="flex-1 m-1 relative">
+				<label for="fromAddress" class="block text-sm font-medium text-gray-700">
+					Path from: {#if $fromUsername}
+						<span class="text-blue-600 flex items-center gap-2">
+							<img src={$fromUserAvatar} alt={$fromUsername} class="w-6 h-6 rounded-full" />
+							{$fromUsername}
+						</span>
+					{/if}
+				</label>
 				<input
 					id="fromAddress"
 					type="text"
 					bind:value={$fromAddress}
+					on:input={(e) => searchUsers(e.target.value, 'from')}
 					placeholder="From Address"
+					autocomplete="off"
 					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
 				/>
+				{#if $activeInput === 'from' && $searchResults.length > 0}
+					<ul
+						class="absolute bg-white border border-gray-300 w-full max-h-36 overflow-y-auto z-10 mt-1 shadow-lg rounded-lg"
+					>
+						{#each $searchResults as result}
+							<li
+								on:click={() => selectUser(result, 'from')}
+								class="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer"
+							>
+								<img
+									src={result.avatarUrl || DEFAULT_AVATAR}
+									alt={result.username}
+									class="w-8 h-8 rounded-full"
+								/>
+								<div>
+									<div>{result.username}</div>
+									<div class="text-xs text-gray-500">{result.safeAddress}</div>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
-			<div class="flex-1 m-1">
-				<label for="toAddress" class="block text-sm font-medium text-gray-700">Path to:</label>
+			<div class="flex-1 m-1 relative">
+				<label for="toAddress" class="block text-sm font-medium text-gray-700">
+					Path to: {#if $toUsername}
+						<span class="text-blue-600 flex items-center gap-2">
+							<img src={$toUserAvatar} alt={$toUsername} class="w-6 h-6 rounded-full" />
+							{$toUsername}
+						</span>
+					{/if}
+				</label>
 				<input
 					id="toAddress"
 					type="text"
 					bind:value={$toAddress}
+					on:input={(e) => searchUsers(e.target.value, 'to')}
 					placeholder="To Address"
+					autocomplete="off"
 					class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
 				/>
+				{#if $activeInput === 'to' && $searchResults.length > 0}
+					<ul
+						class="absolute bg-white border border-gray-300 w-full max-h-36 overflow-y-auto z-10 mt-1 shadow-lg rounded-lg"
+					>
+						{#each $searchResults as result}
+							<li
+								on:click={() => selectUser(result, 'to')}
+								class="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer"
+							>
+								<img
+									src={result.avatarUrl || DEFAULT_AVATAR}
+									alt={result.username}
+									class="w-8 h-8 rounded-full"
+								/>
+								<div>
+									<div>{result.username}</div>
+									<div class="text-xs text-gray-500">{result.safeAddress}</div>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
 			<div class="flex-1 m-1">
 				<label for="ethValue" class="block text-sm font-medium text-gray-700">Value:</label>
@@ -124,12 +225,22 @@
 
 			<div class="flex">
 				<div class="mt-6">
-					<button
-						type="submit"
-						class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
-					>
-						Generate
-					</button>
+					{#if isGenerateDisabled}
+						<button
+							type="button"
+							class="bg-blue-100 border-2 border-blue-100 font-bold rounded-full text-white px-6 py-2 cursor-not-allowed"
+							disabled
+						>
+							Generate
+						</button>
+					{:else}
+						<button
+							type="submit"
+							class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
+						>
+							Generate
+						</button>
+					{/if}
 					<button
 						type="reset"
 						class="bg-white border-2 border-secondary-bg-light font-bold rounded-full text-secondary-bg-light px-6 py-2 hover:bg-gray-100 transition duration-300 ease-in-out mt-2"
@@ -155,8 +266,11 @@
 
 {#if $isLoading}
 	<div
-		class="fixed inset-0 bg-black bg-opacity-30 backdrop-filter backdrop-blur-sm flex items-center justify-center"
+		class="fixed inset-0 bg-black bg-opacity-30 backdrop-filter backdrop-blur-sm flex flex-col items-center justify-center"
 	>
+		<div class="text-white text-center mb-4">
+			Calculating path... This may take a while depending on its complexity. Please be patient.
+		</div>
 		<div class="pulsing-loader"></div>
 	</div>
 {/if}

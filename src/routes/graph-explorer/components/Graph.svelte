@@ -1,5 +1,3 @@
-<svelte:options accessors />
-
 <script lang="ts">
 	import { ethers } from 'ethers';
 	import { D3Graph } from '../../../lib/api/d3graph';
@@ -10,6 +8,7 @@
 	import { onMount, afterUpdate } from 'svelte';
 	import type { Node, Edge } from '../../../lib/api/d3graph';
 	import coseBilkent from 'cytoscape-cose-bilkent';
+	import { isExpandClicked } from '../../../stores/isExpanded';
 
 	cytoscape.use(dagre); // Ensure Dagre is registered outside component lifecycle
 	cytoscape.use(coseBilkent);
@@ -68,6 +67,20 @@
 
 	onMount(async () => {
 		initGraph(useDagreLayout ? dagreLayout : coseLayout); // Use appropriate layout based on prop
+
+		// Subscribe to isExpandClicked store
+		if (typeof window !== 'undefined') {
+			isExpandClicked.subscribe((expandClicked) => {
+				if (expandClicked && !useDagreLayout) {
+					cy.on('tap', 'node', async function (evt) {
+						const nodeId = evt.target.id();
+						await toggleNodeExpansion(nodeId, nodeList);
+					});
+				} else {
+					cy.removeListener('tap', 'node');
+				}
+			});
+		}
 	});
 
 	afterUpdate(() => {
@@ -160,11 +173,6 @@
 		});
 
 		layoutConfig.set(initialLayoutConfig); // Set initial layout config
-
-		cy.on('tap', 'node', async function (evt) {
-			const nodeId = evt.target.id();
-			await toggleNodeExpansion(nodeId, nodeList);
-		});
 	}
 
 	export function switchLayout(newLayoutConfig: any) {
