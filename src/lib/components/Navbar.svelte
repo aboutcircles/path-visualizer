@@ -18,11 +18,11 @@
 			class="text-lg text-white hover:text-gray-400 p-2 mx-4 transition duration-300 ease-in-out rounded-md"
 			>Transaction Visualizer</a
 		>
-		<!--<a
+		<a
 			href="/sybilresistance"
 			class="text-lg text-white hover:text-gray-400 p-2 mx-4 transition duration-300 ease-in-out rounded-md"
 			>Sybil Resistance</a
-		>-->
+		>
 		<!-- <button class="rounded-full bg-button-bg h-10 mx-4"> -->
 		<a
 			href="/analytics"

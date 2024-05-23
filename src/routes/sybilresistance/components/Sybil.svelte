@@ -38,47 +38,47 @@
 
 	const steps = {
 		0: {
-			title: 'Welcome to the Sybil Resistance Demo',
-			description: "Here we have Alice. Alice just signed up at Circles. Click 'Next' to proceed.",
+			title: '',
+			description: "This is Alice. Alice just signed up to Circles.",
 			buttonText: 'Next'
 		},
 		1: {
-			title: 'Alice wants to buy something from a shop',
-			description: "Let's see what happens when Alice tries to send CRC to the shop.",
-			buttonText: 'Send'
+			title: 'Alice wants to buy something from a shop that accepts Circles (CRC).',
+			description: "Let's see what happens when Alice tries to send CRC to the shop...",
+			buttonText: 'Next'
 		},
 		2: {
 			title: 'Now that the Shop trusts Alice, she can send her CRC to the Shop.',
-			description: "Click 'Send' to proceed.",
+			description: "Click 'Next' to send 50 Alice tokens to the shop.",
 			buttonText: 'Send'
 		},
 		3: {
-			title: "As you see, the Shop can only receive Alice's personal CRC.",
-			description: "Click 'Next' to proceed.",
+			title: "The shop can only receive Alice's personal CRC.",
+			description: "",
 			buttonText: 'Next'
 		},
 		4: {
-			title: 'Now Alice spent all her CRC but wants to buy more stuff from the Shop.',
+			title: 'Alice has spent all her CRC, but now wants to buy more items from the shop.',
 			description:
-				"To get more CRC, Alice creates 5 fake accounts. Click 'Next' to send all Fake CRC to Alice.",
+				"To get more CRC, Alice creates 5 fake accounts. Click 'Next' to send all the fake CRC to Alice.",
 			buttonText: 'Next'
 		},
 		5: {
 			title:
-				'Now Alice has a total Amount of 250 CRC. Let’s see what happens when Alice tries to send them to the shop to buy more stuff.',
+				'Now Alice has a total Amount of 250 CRC. Let’s see what happens when Alice tries to send them to the shop...',
 			description: '',
 			buttonText: 'Send'
 		},
 		error1: {
 			errorDescription:
-				'The transaction failed because the Shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
-			nextAction: "Let's initialize a trust connection."
+				'The transaction failed because the shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
+			nextAction: "Let's make a trust connection..."
 		},
 		error5: {
 			errorDescription:
-				'The transaction failed because the Shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
+				'The transaction failed because the shop does not trust the issuer of the tokens Alice is trying to send. In Circles, a transaction can only succeed if the recipient trusts the issuer of the tokens.',
 			finalNote:
-				'This is why you should only trust Circles users you know in real life to ensure they are trustworthy and not bad actors in the network.',
+				'This is why you should only trust Circles users you know in real life, to ensure they are trustworthy and not "bad actors".',
 			buttonText: 'Reset'
 		}
 	};
@@ -489,6 +489,6 @@
 
 <style>
 	.bg-secondary-bg-light {
-		background-color: #4a90e2;
+		background-color: rgb(56 49 139 / var(--tw-bg-opacity));
 	}
 </style>

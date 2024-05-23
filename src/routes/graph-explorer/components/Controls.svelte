@@ -227,6 +227,6 @@
 
 <style>
 	.bg-secondary-bg-light {
-		background-color: #4a90e2;
+		background-color: rgb(56 49 139 / var(--tw-bg-opacity));
 	}
 </style>
