@@ -143,11 +143,11 @@
 			<p class="text-red-500">Username not found.</p>
 		{/if}
 
-		<div class="flex items-center gap-2 relative">
+		<div class="relative">
 			<input
 				id="add-node-input"
 				type="text"
-				class="flex-grow p-2 border border-gray-300 rounded-xl"
+				class="flex-grow p-2 border border-gray-300 rounded-xl w-full"
 				bind:value={addNodeAddress}
 				placeholder="Enter a circles name or address"
 				on:input={(e) => searchUsers(e.target.value, 'addNode')}
