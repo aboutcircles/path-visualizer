@@ -291,7 +291,7 @@
 	}
 
 	export let addNodeFromJson = (graphData) => {
-		initializeGraphWithData(graphData, getDagreLayout(graphData.edges)); // Use adjusted dagre layout for JSON data
+		initializeGraphWithData(graphData, getDagreLayout(graphData.edges));
 	};
 
 	export async function addNode(addNodeAddress: string, nodeList: NodeList | undefined) {

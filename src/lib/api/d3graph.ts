@@ -15,6 +15,23 @@ interface UserData {
 	avatarUrl?: string;
 }
 
+interface TrustRelationship {
+	user: string;
+	limit: number;
+}
+
+interface TrustResponseResult {
+	user: string;
+	trusts: TrustRelationship[];
+	trustedBy: TrustRelationship[];
+}
+
+interface JsonRpcResponse {
+	jsonrpc: string;
+	result: TrustResponseResult;
+	id: number;
+}
+
 export interface Node {
 	id: string;
 	label: string;
@@ -29,21 +46,30 @@ export interface Edge {
 }
 
 export class D3Graph {
-	private rpcApi = new RpcApi;
+	private rpcApi = new RpcApi();
 	private defaultAvatarUrl: string = './default.png';
 
 	async fetchDataForNode(nodeAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
 		nodeAddress = nodeAddress.toLowerCase();
 		try {
-			const trustRelations = await this.rpcApi.getTrustRelations(nodeAddress);
+			const trustRelations: JsonRpcResponse = await this.rpcApi.getTrustRelations(nodeAddress);
 
-			// Ensure unique addresses
-			const addresses = new Set([nodeAddress]);
-			Object.keys(trustRelations.result.trusts).forEach(address => addresses.add(address.toLowerCase()));
-			Object.keys(trustRelations.result.trustedBy).forEach(address => addresses.add(address.toLowerCase()));
+			console.log("trustrelations", trustRelations);
+
+			// Collect unique addresses from trusts and trustedBy
+			const addresses: string[] = [];
+			trustRelations.result.trusts.forEach(entry => addresses.push(entry.user.toLowerCase()));
+			trustRelations.result.trustedBy.forEach(entry => addresses.push(entry.user.toLowerCase()));
+
+			// Ensure the nodeAddress is included
+			if (!addresses.includes(nodeAddress)) {
+				addresses.push(nodeAddress);
+			}
+
+			console.log("Addresses", addresses);
 
 			// Fetch user data for these addresses
-			const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
+			const userData: UserData[] = await CirclesAPI.fetchUserData(addresses);
 
 			// Create a map for quick lookup of username and avatar URL by address
 			const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
@@ -56,7 +82,7 @@ export class D3Graph {
 			}, {});
 
 			// Generate nodes
-			const nodes = Array.from(addresses).map(address => ({
+			const nodes = addresses.map(address => ({
 				id: address,
 				label: userMap[address]?.username || address,
 				shape: 'circularImage',
@@ -65,14 +91,14 @@ export class D3Graph {
 
 			// Generate edges based on trust relationships
 			const edges = [
-				...Object.keys(trustRelations.result.trusts).map(trustedAddress => ({
-					id: `${nodeAddress}-${trustedAddress}`,
+				...trustRelations.result.trusts.map(entry => ({
+					id: `${nodeAddress}-${entry.user.toLowerCase()}`,
 					from: nodeAddress,
-					to: trustedAddress
+					to: entry.user.toLowerCase()
 				})),
-				...Object.keys(trustRelations.result.trustedBy).map(trustingAddress => ({
-					id: `${trustingAddress}-${nodeAddress}`,
-					from: trustingAddress,
+				...trustRelations.result.trustedBy.map(entry => ({
+					id: `${entry.user.toLowerCase()}-${nodeAddress}`,
+					from: entry.user.toLowerCase(),
 					to: nodeAddress
 				}))
 			];

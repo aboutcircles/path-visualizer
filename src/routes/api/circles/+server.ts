@@ -4,7 +4,7 @@ import { ethers } from 'ethers'; // Import the ethers library
 import hubAbi from '$lib/abis/Hub.json';
 
 const hubContract = config.circlesHubContract;
-const rpc = 'https://circles-rpc.aboutcircles.com';
+const rpc = 'https://rpc.helsinki.aboutcircles.com';
 
 const provider = new ethers.JsonRpcProvider(rpc);
 const circlesContract = new ethers.Contract(hubContract, hubAbi, provider);

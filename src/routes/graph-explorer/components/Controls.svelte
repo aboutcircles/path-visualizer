@@ -42,11 +42,10 @@
 	}
 
 	let startingUserList: UserData[] = [];
-	let isAdding = writable(false); // State to track if addition is in progress
+	let isAdding = writable(false);
 	let searchResults = writable<UserData[]>([]);
 	let activeInput = writable<'from' | 'to' | 'addNode' | null>(null);
 
-	// Reactive statement to log the startingUserList whenever it changes
 	$: {
 		console.log('Starting user list updated:', startingUserList);
 		enableGenerate.set(startingUserList.length > 0);
@@ -54,7 +53,7 @@
 
 	const addUser = async () => {
 		if (addNodeAddress.trim() !== '' && !get(isAdding)) {
-			isAdding.set(true); // Lock the addition process
+			isAdding.set(true);
 
 			const addressAlreadyAdded = startingUserList.some(
 				(user) => user.safeAddress.toLowerCase() === addNodeAddress.toLowerCase()
@@ -68,18 +67,17 @@
 							...startingUserList,
 							...userData.map((user) => ({
 								id: parseInt(user.id),
-								username: user.username || addNodeAddress, // Use the address as a fallback username
+								username: user.username || addNodeAddress,
 								safeAddress: user.safeAddress,
 								avatarUrl: user.avatarUrl || '/default.png'
 							}))
 						];
 					} else {
-						// If no user data is found, add the address with the address as the username
 						startingUserList = [
 							...startingUserList,
 							{
-								id: Date.now(), // Generate a unique ID
-								username: addNodeAddress, // Use the address itself as the username
+								id: Date.now(),
+								username: addNodeAddress,
 								safeAddress: addNodeAddress,
 								avatarUrl: '/default.png'
 							}
@@ -93,7 +91,7 @@
 				addressExists = true;
 				return;
 			}
-			isAdding.set(false); // Unlock the addition process
+			isAdding.set(false);
 			addNodeAddress = '';
 		}
 	};
@@ -121,7 +119,7 @@
 		addNodeAddress = '';
 		enableAdd = true;
 		usernameNotFound = false;
-		isExpandClicked.set(false); // Reset the state when reset is clicked
+		isExpandClicked.set(false);
 		onReset();
 	};
 </script>
