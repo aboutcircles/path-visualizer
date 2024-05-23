@@ -127,25 +127,25 @@
 <div class="flex flex-col gap-4 p-4 bg-white w-full h-full rounded-xl">
 	<h1 class="text-xl font-bold">Generate your graph</h1>
 
-	<div class="flex flex-col gap-2">
-		<label for="add-node-input" class="text-sm font-medium"
-			>Add a Circles address or username to your graph:</label
-		>
-		{#if addressExists}
-			<p class="text-red-500">This address is already in the list.</p>
-		{/if}
-		{#if isSignedUp === false}
-			<p class="text-red-500">Address is not signed up at circles.</p>
-		{/if}
-		{#if usernameNotFound}
-			<p class="text-red-500">Username not found.</p>
-		{/if}
+	<div class="flex items-end gap-2">
+		<div class="relative flex-grow">
+			<label for="add-node-input" class="text-sm font-medium"
+				>Add a Circles address or username to your graph:</label
+			>
+			{#if addressExists}
+				<p class="text-red-500">This address is already in the list.</p>
+			{/if}
+			{#if isSignedUp === false}
+				<p class="text-red-500">Address is not signed up at circles.</p>
+			{/if}
+			{#if usernameNotFound}
+				<p class="text-red-500">Username not found.</p>
+			{/if}
 
-		<div class="relative">
 			<input
 				id="add-node-input"
 				type="text"
-				class="flex-grow p-2 border border-gray-300 rounded-xl w-full"
+				class="p-2 border border-gray-300 rounded-xl w-full"
 				bind:value={addNodeAddress}
 				placeholder="Enter a circles name or address"
 				on:input={(e) => searchUsers(e.target.value, 'addNode')}
@@ -176,9 +176,40 @@
 				</ul>
 			{/if}
 		</div>
+		<div class="flex gap-2">
+			{#if !$enableGenerate}
+				<button
+					class="bg-blue-100 border-2 border-blue-100 font-bold rounded-full text-white px-6 py-2 cursor-not-allowed"
+					>Expand</button
+				>
+			{:else}
+				<button
+					on:click={() => {
+						onGenerate();
+						enableGenerate.set(false);
+						addressExists = false;
+						isSignedUp = null;
+						startingUserList = [];
+						addNodeAddress = '';
+						enableAdd = false;
+						isExpandClicked.set(true);
+						console.log('Expand button clicked, store updated');
+					}}
+					class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
+				>
+					Expand
+				</button>
+			{/if}
+			<button
+				on:click={() => reset()}
+				class="bg-white border-2 border-secondary-bg-light font-bold rounded-full text-secondary-bg-light px-6 py-2 hover:bg-gray-100 transition duration-300 ease-in-out"
+			>
+				Reset
+			</button>
+		</div>
 	</div>
 
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-2 mt-4">
 		<label for="add-node-input" class="text-sm font-medium">Users to include in your graph:</label>
 		<div>
 			{#each startingUserList as user}
@@ -191,38 +222,6 @@
 				</div>
 			{/each}
 		</div>
-	</div>
-
-	<div class="flex gap-2 mt-4">
-		{#if !$enableGenerate}
-			<button
-				class="bg-blue-100 border-2 border-blue-100 font-bold rounded-full text-white px-6 py-2 cursor-not-allowed"
-				>Expand</button
-			>
-		{:else}
-			<button
-				on:click={() => {
-					onGenerate();
-					enableGenerate.set(false);
-					addressExists = false;
-					isSignedUp = null;
-					startingUserList = [];
-					addNodeAddress = '';
-					enableAdd = false;
-					isExpandClicked.set(true);
-					console.log('Expand button clicked, store updated');
-				}}
-				class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
-			>
-				Expand
-			</button>
-		{/if}
-		<button
-			on:click={() => reset()}
-			class="bg-white border-2 border-secondary-bg-light font-bold rounded-full text-secondary-bg-light px-6 py-2 hover:bg-gray-100 transition duration-300 ease-in-out"
-		>
-			Reset
-		</button>
 	</div>
 </div>
 

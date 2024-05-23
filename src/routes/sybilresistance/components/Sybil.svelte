@@ -430,49 +430,55 @@
 </script>
 
 <div class="flex flex-col mx-full h-full">
-	<div class="bg-white p-4 rounded-xl shadow mb-4 h-1/4">
-		<h2>{steps[currentStep]?.title}</h2>
-		<p>{steps[currentStep]?.description}</p>
-		<button
-			class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
-			on:click={() => {
-				switch (currentStep) {
-					case 1:
-						if (!errorMessage) {
-							sendAllBalancesFromAliceToShop();
-						} else {
-							initializeTrustConnection();
-						}
-						break;
-					case 2:
-						sendOnlyAlicesTokensToShop();
-						break;
-					case 5:
-						if (!errorMessage) {
-							sendAllBalancesFromAliceToShopWithFakeAccounts();
-						} else {
-							resetState();
-						}
-						break;
-					default:
-						nextStep();
-						break;
-				}
-			}}
-		>
-			{errorMessage && currentStep === 5 ? steps.error5.buttonText : steps[currentStep]?.buttonText}
-		</button>
-		{#if errorMessage}
-			<p style="color: red;">{errorMessage}</p>
-			{#if currentStep === 1}
-				<p>{steps.error1.errorDescription}</p>
-				<p>{steps.error1.nextAction}</p>
+	<div class="bg-white p-4 rounded-xl shadow mb-4 h-1/4 flex items-end justify-between">
+		<div>
+			<h2>{steps[currentStep]?.title}</h2>
+			<p>{steps[currentStep]?.description}</p>
+			{#if errorMessage}
+				<p style="color: red;">{errorMessage}</p>
+				{#if currentStep === 1}
+					<p>{steps.error1.errorDescription}</p>
+					<p>{steps.error1.nextAction}</p>
+				{/if}
+				{#if currentStep === 5}
+					<p>{steps.error5.errorDescription}</p>
+					<p>{steps.error5.finalNote}</p>
+				{/if}
 			{/if}
-			{#if currentStep === 5}
-				<p>{steps.error5.errorDescription}</p>
-				<p>{steps.error5.finalNote}</p>
-			{/if}
-		{/if}
+		</div>
+		<div>
+			<button
+				class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
+				on:click={() => {
+					switch (currentStep) {
+						case 1:
+							if (!errorMessage) {
+								sendAllBalancesFromAliceToShop();
+							} else {
+								initializeTrustConnection();
+							}
+							break;
+						case 2:
+							sendOnlyAlicesTokensToShop();
+							break;
+						case 5:
+							if (!errorMessage) {
+								sendAllBalancesFromAliceToShopWithFakeAccounts();
+							} else {
+								resetState();
+							}
+							break;
+						default:
+							nextStep();
+							break;
+					}
+				}}
+			>
+				{errorMessage && currentStep === 5
+					? steps.error5.buttonText
+					: steps[currentStep]?.buttonText}
+			</button>
+		</div>
 	</div>
 	<div class="bg-white p-4 rounded-xl shadow mb-4 h-full">
 		{#key graphKey}
@@ -480,3 +486,9 @@
 		{/key}
 	</div>
 </div>
+
+<style>
+	.bg-secondary-bg-light {
+		background-color: #4a90e2;
+	}
+</style>
