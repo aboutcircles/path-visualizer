@@ -1,20 +1,16 @@
-interface TrustEvent {
-  timestamp: string;
-  blockNumber: string;
-  transactionHash: string;
-  userAddress: string;
-  canSendToAddress: string;
-  limit: number;
-  cursor: string;
+interface TrustRelationship {
+  [address: string]: number;
 }
 
-interface TrustEventsResponseResult {
-  events: TrustEvent[];
+interface TrustResponseResult {
+  user: string;
+  trusts: TrustRelationship;
+  trustedBy: TrustRelationship;
 }
 
-interface TrustEventsJsonRpcResponse {
+interface JsonRpcResponse {
   jsonrpc: string;
-  result: TrustEventsResponseResult;
+  result: TrustResponseResult;
   id: number;
 }
 
@@ -49,40 +45,6 @@ export class RpcApi {
         throw new Error(`Error fetching trust relations: ${error.message}`);
       } else {
         throw new Error(`Error fetching trust relations: ${String(error)}`);
-      }
-    }
-  }
-
-  async getTrustEvents(address: string): Promise<TrustEventsJsonRpcResponse> {
-    const requestBody = {
-      jsonrpc: "2.0",
-      method: "circles_queryTrustEvents",
-      params: [{
-        UserAddress: address
-      }],
-      id: 1,
-    };
-
-    try {
-      const response = await fetch(this.rpcUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`RPC request failed: ${response.status}`);
-      }
-
-      const data: TrustEventsJsonRpcResponse = await response.json();
-      return data;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Error fetching trust events: ${error.message}`);
-      } else {
-        throw new Error(`Error fetching trust events: ${String(error)}`);
       }
     }
   }
