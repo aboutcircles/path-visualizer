@@ -29,7 +29,7 @@ export interface Edge {
 }
 
 export class D3Graph {
-	private rpcApi = new RpcApi;
+	private rpcApi = new RpcApi();
 	private defaultAvatarUrl: string = './default.png';
 
 	async fetchDataForNode(nodeAddress: string): Promise<{ nodes: Node[], edges: Edge[] }> {
@@ -79,7 +79,52 @@ export class D3Graph {
 
 			return { nodes, edges };
 		} catch (error) {
-			throw new Error(`Error preparing data for Vis Network: ${error}`);
+			console.error(`Error fetching trust relations: ${error.message}`);
+
+			try {
+				const trustEvents = await this.rpcApi.getTrustEvents(nodeAddress);
+				console.log('Trust events:', trustEvents);
+
+				// Ensure unique addresses
+				const addresses = new Set([nodeAddress]);
+				trustEvents.result.forEach(event => {
+					addresses.add(event.canSendToAddress.toLowerCase());
+				});
+
+				// Fetch user data for these addresses
+				const userData: UserData[] = await CirclesAPI.fetchUserData(Array.from(addresses));
+
+				// Create a map for quick lookup of username and avatar URL by address
+				const userMap: UserMap = userData.reduce((acc: UserMap, user) => {
+					const safeAddress = user.safeAddress.toLowerCase();
+					acc[safeAddress] = {
+						username: user.username || safeAddress, // Fallback to address if username is not provided
+						avatarUrl: user.avatarUrl || this.defaultAvatarUrl
+					};
+					return acc;
+				}, {});
+
+				// Generate nodes
+				const nodes = Array.from(addresses).map(address => ({
+					id: address,
+					label: userMap[address]?.username || address,
+					shape: 'circularImage',
+					image: userMap[address]?.avatarUrl || this.defaultAvatarUrl
+				}));
+
+				// Generate edges based on trust events
+				const edges = trustEvents.result.map(event => ({
+					id: `${event.userAddress}-${event.canSendToAddress}`,
+					from: event.userAddress.toLowerCase(),
+					to: event.canSendToAddress.toLowerCase()
+				}));
+
+				return { nodes, edges };
+			} catch (eventsError) {
+				console.error(`Error fetching trust events: ${eventsError.message}`);
+			}
+
+			throw new Error(`Error preparing data for Vis Network: ${error.message}`);
 		}
 	}
 }
