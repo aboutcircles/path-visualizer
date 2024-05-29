@@ -2,6 +2,7 @@
 	import { CirclesAPI } from '$lib/api/gardenApi';
 	import { get, writable } from 'svelte/store';
 	import { isExpandClicked } from '../../../stores/isExpanded'; // Import the store
+	import UserSelect from '$lib/components/UserSelect.svelte';
 
 	export let addNodeAddress: string;
 	export let pathFromAddress: string;
@@ -18,21 +19,8 @@
 
 	const enableGenerate = writable(false);
 
-	const isUserSignedUp = async (address: string) => {
-		addressExists = false;
-		try {
-			const response = await fetch(`/api/circles/?address=${address}`);
-			if (!response.ok) {
-				throw new Error('Network response was not ok.');
-			}
-			const data = await response.json();
-			console.log('data.isSignedUp', data.isSignedUp);
-			return data.isSignedUp;
-		} catch (error) {
-			console.error('Error checking user signup:', error);
-			throw new Error('Error checking user signup');
-		}
-	};
+	const addNodeUsername = writable('');
+	const addNodeUserAvatar = writable('');
 
 	interface UserData {
 		id: number;
@@ -43,8 +31,6 @@
 
 	let startingUserList: UserData[] = [];
 	let isAdding = writable(false);
-	let searchResults = writable<UserData[]>([]);
-	let activeInput = writable<'from' | 'to' | 'addNode' | null>(null);
 
 	$: {
 		console.log('Starting user list updated:', startingUserList);
@@ -96,21 +82,6 @@
 		}
 	};
 
-	const searchUsers = async (query: string, inputType: 'addNode') => {
-		if (query.length > 0) {
-			try {
-				const results = await CirclesAPI.searchUsers(query);
-				searchResults.set(results);
-				activeInput.set(inputType);
-			} catch (error) {
-				console.error('Failed to search users:', error);
-			}
-		} else {
-			searchResults.set([]);
-			activeInput.set(null);
-		}
-	};
-
 	const reset = () => {
 		startingUserList = [];
 		enableGenerate.set(false);
@@ -128,54 +99,14 @@
 	<h1 class="text-xl font-bold">Generate your graph</h1>
 
 	<div class="flex items-end gap-2">
-		<div class="relative flex-grow">
-			<label for="add-node-input" class="text-sm font-medium"
-				>Add a Circles address or username to your graph:</label
-			>
-			{#if addressExists}
-				<p class="text-red-500">This address is already in the list.</p>
-			{/if}
-			{#if isSignedUp === false}
-				<p class="text-red-500">Address is not signed up at circles.</p>
-			{/if}
-			{#if usernameNotFound}
-				<p class="text-red-500">Username not found.</p>
-			{/if}
-
-			<input
-				id="add-node-input"
-				type="text"
-				class="p-2 border border-gray-300 rounded-xl w-full"
-				bind:value={addNodeAddress}
-				placeholder="Enter a circles name or address"
-				on:input={(e) => searchUsers(e.target.value, 'addNode')}
-				autocomplete="off"
-				disabled={startingUserList.length === 0 && !enableAdd}
-			/>
-			{#if $activeInput === 'addNode' && $searchResults.length > 0}
-				<ul
-					class="absolute bg-white border border-gray-300 rounded-lg mt-1 max-h-32 overflow-y-auto z-10 w-full"
-				>
-					{#each $searchResults as result}
-						<li
-							class="p-2 cursor-pointer hover:bg-gray-100 flex items-center gap-2"
-							on:click={async () => {
-								addNodeAddress = result.safeAddress;
-								activeInput.set(null);
-								await addUser();
-							}}
-						>
-							<img
-								src={result.avatarUrl || '/default.png'}
-								alt="Profile"
-								class="w-6 h-6 rounded-full"
-							/>
-							<span>{result.username} ({result.safeAddress})</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
+		<UserSelect
+			label="Add a Circles address or username to your graph"
+			bind:bindValue={addNodeAddress}
+			bind:bindUsername={$addNodeUsername}
+			bind:bindUserAvatar={$addNodeUserAvatar}
+			placeholder="Enter a circles name or address"
+			inputType="addNode"
+		/>
 		<div class="flex gap-2">
 			{#if !$enableGenerate}
 				<button
