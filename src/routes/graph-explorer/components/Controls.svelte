@@ -67,7 +67,7 @@
 							];
 						}
 						onAddNode(address);
-						userSelectRef.clearFields(); // Clear the fields after adding the user
+						userSelectRef.clearFields();
 					} else {
 						console.error('Address is not signed up at Circles.');
 					}

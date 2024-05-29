@@ -10,7 +10,7 @@
 	import coseBilkent from 'cytoscape-cose-bilkent';
 	import { isExpandClicked } from '../../../stores/isExpanded';
 
-	cytoscape.use(dagre); // Ensure Dagre is registered outside component lifecycle
+	cytoscape.use(dagre);
 	cytoscape.use(coseBilkent);
 
 	export let cy: cytoscape.Core | undefined = undefined;
@@ -19,7 +19,7 @@
 	export let useDagreLayout: boolean = false;
 
 	let elements: { data: { image: string; addedAt: number; id: string; label: string } }[] = [];
-	let expandedNodes: Writable<Set<string>> = writable(new Set<string>()); // Now a Svelte store for reactivity
+	let expandedNodes: Writable<Set<string>> = writable(new Set<string>());
 	let layoutConfig: Writable<any> = writable(null);
 	let container: HTMLDivElement;
 
@@ -66,9 +66,8 @@
 	};
 
 	onMount(async () => {
-		initGraph(useDagreLayout ? dagreLayout : coseLayout); // Use appropriate layout based on prop
+		initGraph(useDagreLayout ? dagreLayout : coseLayout);
 
-		// Subscribe to isExpandClicked store
 		if (typeof window !== 'undefined') {
 			isExpandClicked.subscribe((expandClicked) => {
 				if (expandClicked && !useDagreLayout) {
@@ -95,7 +94,7 @@
 	function getDagreLayout(edges: Edge[]) {
 		return {
 			...dagreLayout,
-			rankDir: edges.length === 0 ? 'LR' : dagreLayout.rankDir // Set to left-to-right if no edges
+			rankDir: edges.length === 0 ? 'LR' : dagreLayout.rankDir
 		};
 	}
 
@@ -109,7 +108,6 @@
 			}))
 		];
 
-		// Clear existing elements before adding new ones
 		cy.elements().remove();
 		cy.add(newElements);
 
@@ -123,9 +121,9 @@
 			style: {
 				'background-color': '#6AAFFF',
 				'text-wrap': 'wrap',
-				'text-max-width': '100px', // Ensures the text wraps properly
-				'white-space': 'pre', // Keeps newlines for the token details
-				'font-size': '10px', // Default font size for the label
+				'text-max-width': '100px',
+				'white-space': 'pre',
+				'font-size': '10px',
 				label: 'data(label)',
 				'border-color': '#406897',
 				'border-width': 4,
@@ -133,10 +131,10 @@
 				height: 'mapData(degree, 1, 10, 20, 50)',
 				'background-image': 'data(image)',
 				'background-fit': 'cover',
-				'text-valign': 'bottom', // Align text at the bottom of the node
+				'text-valign': 'bottom',
 				'text-halign': 'center',
 				color: 'black',
-				'text-margin-y': 5, // Adjust margin for better spacing
+				'text-margin-y': 5,
 				'text-background-color': 'lightgrey',
 				'text-background-opacity': 0.7,
 				'text-background-shape': 'roundrectangle',
@@ -197,11 +195,11 @@
 			layout: initialLayoutConfig
 		});
 
-		layoutConfig.set(initialLayoutConfig); // Set initial layout config
+		layoutConfig.set(initialLayoutConfig);
 	}
 
 	export function switchLayout(newLayoutConfig: any) {
-		layoutConfig.set(newLayoutConfig); // Switch layout configuration reactively
+		layoutConfig.set(newLayoutConfig);
 	}
 
 	export function runLayout(layoutConfig: any = null) {
@@ -242,7 +240,6 @@
 					data: { id: edge.id, source: edge.from, target: edge.to }
 				}))
 			];
-			// Efficiently filter out all 'newElements' that already exist in the graph
 			const existingNodes = new Set(cy.nodes().map((node) => node.id()));
 			const existingEdges = new Set(cy.edges().map((edge) => edge.id()));
 			newElements = newElements.filter(
@@ -251,7 +248,6 @@
 
 			cy.add(newElements);
 
-			// Remove all self references
 			cy.edges().forEach((edge) => {
 				if (edge.source().id() === edge.target().id()) {
 					edge.remove();
@@ -309,7 +305,6 @@
 					}))
 				);
 
-			// Only keep the 'addNodeAddress' node
 			newElements = newElements.filter((element) => element.data.id === addNodeAddress);
 
 			cy.add(newElements);
@@ -327,7 +322,6 @@
 			await expandNode(address, nodeList, false);
 		}
 		for (const address of addresses) {
-			// TODO: Not all nodes collapse correctly
 			await collapseNode(address, false);
 		}
 
@@ -337,10 +331,9 @@
 
 	export function generateGraph() {
 		console.log('Generating graph...');
-		// Iterate through all nodes in the cytoscape instance
 		cy.nodes().forEach((node) => {
-			const nodeId = node.id(); // Assuming id is sufficient for expanding
-			expandNode(nodeId, nodeList).catch(console.error); // Handle errors and expand each node
+			const nodeId = node.id();
+			expandNode(nodeId, nodeList).catch(console.error);
 		});
 	}
 </script>
