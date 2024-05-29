@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, createEventDispatcher } from 'svelte';
 	import { CirclesAPI, type UserData } from '$lib/api/gardenApi';
 	import { writable } from 'svelte/store';
 	import { ethers } from 'ethers';
@@ -10,6 +10,7 @@
 	export let bindUserAvatar: string;
 	export let placeholder: string;
 	export let inputType: 'from' | 'to' | 'addNode';
+	export let context: 'trust-graph' | 'pathfinder' = 'pathfinder'; // Default to 'pathfinder'
 
 	const DEFAULT_AVATAR = '/default.png';
 
@@ -17,6 +18,8 @@
 	const activeInput = writable<boolean>(false);
 	const errorMessage = writable<string | null>(null);
 	let debounceTimeout: ReturnType<typeof setTimeout>;
+
+	const dispatch = createEventDispatcher();
 
 	async function searchUsers(query: string) {
 		if (query.length > 0) {
@@ -27,7 +30,13 @@
 
 					if (isSignedUpData.isSignedUp) {
 						const userData = await CirclesAPI.fetchUserData([query]);
-						searchResults.set(userData);
+						if (userData.length > 0) {
+							searchResults.set(userData);
+						} else {
+							searchResults.set([
+								{ safeAddress: query, username: query, avatarUrl: DEFAULT_AVATAR }
+							]);
+						}
 						errorMessage.set(null);
 					} else {
 						searchResults.set([]);
@@ -60,10 +69,13 @@
 
 	function selectUser(result: UserData) {
 		bindValue = result.safeAddress;
-		bindUsername = result.username;
-		bindUserAvatar = result.avatarUrl || DEFAULT_AVATAR;
+		if (context !== 'trust-graph') {
+			bindUsername = result.username;
+			bindUserAvatar = result.avatarUrl || DEFAULT_AVATAR;
+		}
 		activeInput.set(false);
 		errorMessage.set(null);
+		dispatch('select', result.safeAddress);
 	}
 
 	function handleClickOutside(event: MouseEvent) {
@@ -71,6 +83,12 @@
 		if (dropdown && !dropdown.contains(event.target as Node)) {
 			activeInput.set(false);
 		}
+	}
+
+	function clearFields() {
+		bindValue = '';
+		bindUsername = '';
+		bindUserAvatar = DEFAULT_AVATAR;
 	}
 
 	onMount(() => {
@@ -84,11 +102,13 @@
 			window.removeEventListener('click', handleClickOutside);
 		}
 	});
+
+	export { clearFields };
 </script>
 
 <div class="flex-1 m-1 relative">
 	<label for={inputType} class="block text-sm font-medium text-gray-700">
-		{label}: {#if bindUsername}
+		{label}: {#if context !== 'trust-graph' && bindUsername}
 			<span class="text-blue-600 flex items-center gap-2">
 				<img src={bindUserAvatar} alt={bindUsername} class="w-6 h-6 rounded-full" />
 				{bindUsername}
@@ -100,8 +120,8 @@
 		type="text"
 		bind:value={bindValue}
 		on:input={handleInput}
-		{placeholder}
 		autocomplete="off"
+		{placeholder}
 		class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
 	/>
 	{#if $activeInput}

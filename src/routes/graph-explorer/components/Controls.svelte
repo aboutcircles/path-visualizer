@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { CirclesAPI } from '$lib/api/gardenApi';
 	import { get, writable } from 'svelte/store';
-	import { isExpandClicked } from '../../../stores/isExpanded'; // Import the store
+	import { isExpandClicked } from '../../../stores/isExpanded';
 	import UserSelect from '$lib/components/UserSelect.svelte';
+	import { CirclesAPI } from '$lib/api/gardenApi';
 
 	export let addNodeAddress: string;
 	export let pathFromAddress: string;
@@ -11,11 +11,6 @@
 	export let onAddPath: (from: string, to: string) => void;
 	export let onGenerate: () => void;
 	export let onReset: () => void;
-
-	let isSignedUp: any = null;
-	let addressExists: boolean = false;
-	let enableAdd: boolean = true;
-	let usernameNotFound: boolean = false;
 
 	const enableGenerate = writable(false);
 
@@ -31,51 +26,54 @@
 
 	let startingUserList: UserData[] = [];
 	let isAdding = writable(false);
+	let userSelectRef: any;
 
-	$: {
-		console.log('Starting user list updated:', startingUserList);
-		enableGenerate.set(startingUserList.length > 0);
-	}
+	$: enableGenerate.set(startingUserList.length > 0);
 
-	const addUser = async () => {
-		if (addNodeAddress.trim() !== '' && !get(isAdding)) {
+	const addUser = async (address: string) => {
+		if (address.trim() !== '' && !get(isAdding)) {
 			isAdding.set(true);
 
 			const addressAlreadyAdded = startingUserList.some(
-				(user) => user.safeAddress.toLowerCase() === addNodeAddress.toLowerCase()
+				(user) => user.safeAddress.toLowerCase() === address.toLowerCase()
 			);
 
 			if (!addressAlreadyAdded) {
 				try {
-					const userData = await CirclesAPI.fetchUserData([addNodeAddress]);
-					if (userData && userData.length > 0) {
-						startingUserList = [
-							...startingUserList,
-							...userData.map((user) => ({
-								id: parseInt(user.id),
-								username: user.username || addNodeAddress,
-								safeAddress: user.safeAddress,
-								avatarUrl: user.avatarUrl || '/default.png'
-							}))
-						];
+					const isSignedUpResponse = await fetch(`/api/circles?address=${address}`);
+					const isSignedUpData = await isSignedUpResponse.json();
+
+					if (isSignedUpData.isSignedUp) {
+						const userData = await CirclesAPI.fetchUserData([address]);
+						if (userData && userData.length > 0) {
+							startingUserList = [
+								...startingUserList,
+								...userData.map((user) => ({
+									id: parseInt(user.id),
+									username: user.username || address,
+									safeAddress: user.safeAddress,
+									avatarUrl: user.avatarUrl || '/default.png'
+								}))
+							];
+						} else {
+							startingUserList = [
+								...startingUserList,
+								{
+									id: Date.now(),
+									username: address,
+									safeAddress: address,
+									avatarUrl: '/default.png'
+								}
+							];
+						}
+						onAddNode(address);
+						userSelectRef.clearFields(); // Clear the fields after adding the user
 					} else {
-						startingUserList = [
-							...startingUserList,
-							{
-								id: Date.now(),
-								username: addNodeAddress,
-								safeAddress: addNodeAddress,
-								avatarUrl: '/default.png'
-							}
-						];
+						console.error('Address is not signed up at Circles.');
 					}
-					onAddNode(addNodeAddress);
 				} catch (error) {
-					console.error('Error fetching user data:', error);
+					console.error('Error checking signup status or fetching user data:', error);
 				}
-			} else {
-				addressExists = true;
-				return;
 			}
 			isAdding.set(false);
 			addNodeAddress = '';
@@ -85,11 +83,7 @@
 	const reset = () => {
 		startingUserList = [];
 		enableGenerate.set(false);
-		isSignedUp = null;
-		addressExists = false;
 		addNodeAddress = '';
-		enableAdd = true;
-		usernameNotFound = false;
 		isExpandClicked.set(false);
 		onReset();
 	};
@@ -100,12 +94,15 @@
 
 	<div class="flex items-end gap-2">
 		<UserSelect
+			bind:this={userSelectRef}
 			label="Add a Circles address or username to your graph"
 			bind:bindValue={addNodeAddress}
 			bind:bindUsername={$addNodeUsername}
 			bind:bindUserAvatar={$addNodeUserAvatar}
 			placeholder="Enter a circles name or address"
 			inputType="addNode"
+			context="trust-graph"
+			on:select={(e) => addUser(e.detail)}
 		/>
 		<div class="flex gap-2">
 			{#if !$enableGenerate}
@@ -118,11 +115,8 @@
 					on:click={() => {
 						onGenerate();
 						enableGenerate.set(false);
-						addressExists = false;
-						isSignedUp = null;
 						startingUserList = [];
 						addNodeAddress = '';
-						enableAdd = false;
 						isExpandClicked.set(true);
 						console.log('Expand button clicked, store updated');
 					}}
