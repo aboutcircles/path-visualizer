@@ -4,6 +4,9 @@
 	import { SankeyChart } from '../../../lib/api/sankey';
 	import { ethers } from 'ethers';
 	import UserSelect from '$lib/components/UserSelect.svelte';
+	import { CirclesAPI } from '$lib/api/gardenApi';
+	import hubAbi from '$lib/abis/Hub.json';
+	import tokenAbi from '$lib/abis/Token.json';
 
 	let plotly: any;
 	const fromAddress = writable('');
@@ -16,6 +19,16 @@
 	const isLoading = writable(false);
 	const ethValue = writable(0);
 
+	interface Transfer {
+		from: string;
+		to: string;
+		amount: ethers.BigNumberish;
+		transactionHash: string;
+		logs: any[];
+	}
+
+	const transactions = writable<Transfer[]>([]); // Store for transactions
+
 	let sankeyChart = new SankeyChart();
 
 	$: weiValue = ethers.parseEther($ethValue.toString()).toString();
@@ -23,6 +36,21 @@
 
 	// Computed property to determine if the Generate button should be enabled
 	$: isGenerateDisabled = !$fromUsername || !$toUsername || $ethValue === 0;
+
+	function convertBigIntsToStrings(obj: any): any {
+		if (typeof obj === 'bigint') {
+			return obj.toString();
+		} else if (Array.isArray(obj)) {
+			return obj.map(convertBigIntsToStrings);
+		} else if (typeof obj === 'object' && obj !== null) {
+			return Object.keys(obj).reduce((acc, key) => {
+				acc[key] = convertBigIntsToStrings(obj[key]);
+				return acc;
+			}, {} as any);
+		} else {
+			return obj;
+		}
+	}
 
 	async function handleSubmit() {
 		isLoading.set(true);
@@ -95,8 +123,71 @@
 		plotly.newPlot('sankeyDiagram', data, layout, config);
 	}
 
+	async function generateChartFromLogs(logs: any[]) {
+		const sankeyData = await sankeyChart.generateSankeyDataFromLogs(logs);
+		drawChart(sankeyData);
+	}
+
 	onMount(async () => {
 		plotly = (await import('plotly.js-dist-min')).default;
+
+		// Fetch recent transactions
+		const provider = new ethers.JsonRpcProvider('https://rpc.helsinki.aboutcircles.com');
+		const contractAddress = '0x29b9a7fBb8995b2423a71cC17cf9810798F6C543';
+		const hubContract = new ethers.Contract(contractAddress, hubAbi, provider);
+		const tokenInterface = new ethers.Interface(tokenAbi);
+
+		async function getRecentTransactions(fromBlock: number, toBlock: number) {
+			const filter = hubContract.filters.HubTransfer();
+			const events = await hubContract.queryFilter(filter, fromBlock, toBlock);
+
+			const transfers: Transfer[] = await Promise.all(
+				events.map(async (event) => {
+					const receipt = await provider.getTransactionReceipt(event.transactionHash);
+
+					if (receipt) {
+						// Filter for ERC-20 Transfer events
+						const transferEventSignature = ethers.id('Transfer(address,address,uint256)');
+						const erc20Transfers = receipt.logs.filter(
+							(log) => log.topics[0] === transferEventSignature
+						);
+
+						const logs = erc20Transfers.map((log) => {
+							const parsedLog = tokenInterface.parseLog(log);
+							return parsedLog;
+						});
+
+						console.log(
+							`Transaction ${event.transactionHash} logs:`,
+							convertBigIntsToStrings(logs)
+						);
+
+						const { args } = event as ethers.EventLog;
+						return {
+							from: args?.from,
+							to: args?.to,
+							amount: args?.amount,
+							transactionHash: event.transactionHash,
+							logs
+						};
+					} else {
+						return {
+							from: '',
+							to: '',
+							amount: 0,
+							transactionHash: event.transactionHash,
+							logs: []
+						};
+					}
+				})
+			);
+
+			return transfers;
+		}
+
+		const latestBlock = await provider.getBlockNumber();
+		const recentTransactions = await getRecentTransactions(latestBlock - 10000, latestBlock); // Adjust the block range as needed
+		transactions.set(recentTransactions);
 	});
 </script>
 
@@ -167,6 +258,25 @@
 			</div>
 		</form>
 	</div>
+
+	<!-- New Recent Transactions section -->
+	<div class="bg-white p-4 rounded-xl shadow mb-4">
+		<h2 class="text-2xl font-bold mb-4">Recent Transactions</h2>
+		<ul>
+			{#each $transactions as transaction}
+				<li>
+					From: {transaction.from} To: {transaction.to} Amount: {ethers.formatEther(
+						transaction.amount
+					)} TxHash: {transaction.transactionHash}
+					<button
+						class="bg-white border-2 border-secondary-bg-light font-bold rounded-full text-secondary-bg-light px-6 py-2 hover:bg-gray-100 transition duration-300 ease-in-out mt-2"
+						on:click={() => generateChartFromLogs(transaction.logs)}>Generate Chart</button
+					>
+				</li>
+			{/each}
+		</ul>
+	</div>
+
 	<div class="bg-white p-4 rounded-xl shadow flex-grow overflow-auto">
 		<h1 class="font-bold">About this graph</h1>
 		<p>
