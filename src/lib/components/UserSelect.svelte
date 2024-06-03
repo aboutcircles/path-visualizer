@@ -34,7 +34,7 @@
 							searchResults.set(userData);
 						} else {
 							searchResults.set([
-								{ safeAddress: query, username: query, avatarUrl: DEFAULT_AVATAR }
+								{ id: '0', safeAddress: query, username: query, avatarUrl: DEFAULT_AVATAR }
 							]);
 						}
 						errorMessage.set(null);
