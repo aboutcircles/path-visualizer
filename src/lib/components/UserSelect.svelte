@@ -133,9 +133,9 @@
 				<li class="p-2 text-red-500">{$errorMessage}</li>
 			{:else}
 				{#each $searchResults as result}
-					<li
+					<button
 						on:click={() => selectUser(result)}
-						class="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer"
+						class="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer w-full text-left"
 					>
 						<img
 							src={result.avatarUrl || DEFAULT_AVATAR}
@@ -146,7 +146,7 @@
 							<div>{result.username}</div>
 							<div class="text-xs text-gray-500">{result.safeAddress}</div>
 						</div>
-					</li>
+					</button>
 				{/each}
 			{/if}
 		</ul>

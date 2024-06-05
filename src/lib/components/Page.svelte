@@ -1,3 +1,3 @@
-<div class="w-full h-full gap-6">
+<div class="w-full h-full">
 	<slot />
 </div>
