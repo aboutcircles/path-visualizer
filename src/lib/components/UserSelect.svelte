@@ -65,13 +65,18 @@
 		debounceTimeout = setTimeout(() => {
 			searchUsers(query);
 		}, 300);
+		dispatch('input', { value: query });
 	}
 
 	function selectUser(result: UserData) {
 		bindValue = result.safeAddress;
+		dispatch('input', { value: bindValue });
+
 		if (context !== 'trust-graph') {
 			bindUsername = result.username;
 			bindUserAvatar = result.avatarUrl || DEFAULT_AVATAR;
+			dispatch('usernameInput', { value: bindUsername });
+			dispatch('avatarInput', { value: bindUserAvatar });
 		}
 		activeInput.set(false);
 		errorMessage.set(null);
