@@ -4,12 +4,11 @@
 		type PathVisualizerState,
 		type Transfer
 	} from '../../../stores/pathVisualizer';
-	import { get } from 'svelte/store';
 	import { ethers, type LogDescription } from 'ethers';
 	import hubAbi from '$lib/abis/Hub.json';
 	import tokenAbi from '$lib/abis/Token.json';
 	import { CirclesAPI, type UserData } from '$lib/api/gardenApi';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, afterUpdate } from 'svelte';
 
 	export let generateChartFromLogs;
 
@@ -19,8 +18,15 @@
 	});
 
 	const DEFAULT_AVATAR = '/default.png';
+	const BLOCK_STEP = 10000; // Number of blocks to scan in each batch
+	let fromBlock: number;
+	let toBlock: number;
+	let loading = false;
+	let transactions: Transfer[] = [];
+	let loadMoreTrigger: HTMLElement;
+	let observer: IntersectionObserver;
 
-	function pruneAddress(address: string): string {
+	function truncateAddress(address: string): string {
 		return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
 	}
 
@@ -30,13 +36,13 @@
 			userData || {
 				id: address,
 				safeAddress: address,
-				username: pruneAddress(address),
+				username: truncateAddress(address),
 				avatarUrl: DEFAULT_AVATAR
 			}
 		);
 	}
 
-	async function getRecentTransactions(fromBlock: number, toBlock: number) {
+	async function getRecentTransactions(fromBlock: number, toBlock: number): Promise<Transfer[]> {
 		const provider = new ethers.JsonRpcProvider('https://rpc.helsinki.aboutcircles.com');
 		const contractAddress = '0x29b9a7fBb8995b2423a71cC17cf9810798F6C543';
 		const hubContract = new ethers.Contract(contractAddress, hubAbi, provider);
@@ -107,17 +113,57 @@
 				(b.transactionIndex || 0) - (a.transactionIndex || 0)
 		);
 
-		// Update the store with the fetched transactions
+		return transfers;
+	}
+
+	async function loadMoreTransactions() {
+		if (loading) return;
+		loading = true;
+
+		const newToBlock = fromBlock - 1;
+		const newFromBlock = Math.max(newToBlock - BLOCK_STEP, 0); // Ensuring fromBlock is non-negative
+		const newTransactions = await getRecentTransactions(newFromBlock, newToBlock);
+
+		fromBlock = newFromBlock;
+
+		transactions = [...transactions, ...newTransactions];
 		pathVisualizerStore.update((state) => ({
 			...state,
-			transactions: transfers.slice(0, 15)
+			transactions
 		}));
+		loading = false;
+
+		// Manually trigger the observer to re-check visibility
+		if (loadMoreTrigger && observer) {
+			observer.unobserve(loadMoreTrigger);
+			observer.observe(loadMoreTrigger);
+		}
 	}
 
 	onMount(async () => {
 		const provider = new ethers.JsonRpcProvider('https://rpc.helsinki.aboutcircles.com');
-		const latestBlock = await provider.getBlockNumber();
-		await getRecentTransactions(latestBlock - 10000, latestBlock);
+		toBlock = await provider.getBlockNumber();
+		fromBlock = toBlock - BLOCK_STEP;
+		await loadMoreTransactions();
+
+		observer = new IntersectionObserver((entries) => {
+			if (entries[0].isIntersecting && !loading) {
+				loadMoreTransactions();
+			}
+		});
+		if (loadMoreTrigger) {
+			observer.observe(loadMoreTrigger);
+		}
+	});
+
+	afterUpdate(() => {
+		// Check if the loadMoreTrigger is still visible and load more if necessary
+		if (loadMoreTrigger && observer) {
+			const rect = loadMoreTrigger.getBoundingClientRect();
+			if (rect.top < window.innerHeight && !loading) {
+				loadMoreTransactions();
+			}
+		}
 	});
 
 	const handleGenerateChart = async (logs: LogDescription[]) => {
@@ -127,6 +173,9 @@
 
 	onDestroy(() => {
 		unsubscribe();
+		if (observer && loadMoreTrigger) {
+			observer.unobserve(loadMoreTrigger);
+		}
 	});
 </script>
 
@@ -141,7 +190,7 @@
 						alt={transaction.fromUser?.username || 'Unknown User'}
 						class="w-6 h-6 rounded-full inline-block"
 					/>
-					{transaction.fromUser?.username || pruneAddress(transaction.from)}
+					{transaction.fromUser?.username || truncateAddress(transaction.from)}
 				</div>
 				<div>
 					To:
@@ -150,7 +199,7 @@
 						alt={transaction.toUser?.username || 'Unknown User'}
 						class="w-6 h-6 rounded-full inline-block"
 					/>
-					{transaction.toUser?.username || pruneAddress(transaction.to)}
+					{transaction.toUser?.username || truncateAddress(transaction.to)}
 				</div>
 				<div>Amount: {Number(ethers.formatEther(transaction.amount)).toFixed(2)} CRC</div>
 				<div>
@@ -176,5 +225,10 @@
 				</button>
 			</li>
 		{/each}
+		<!-- Invisible element to trigger loading more transactions -->
+		<div bind:this={loadMoreTrigger} class="invisible h-1"></div>
 	</ul>
+	{#if loading}
+		<div class="text-center py-4">Loading more transactions...</div>
+	{/if}
 </div>
