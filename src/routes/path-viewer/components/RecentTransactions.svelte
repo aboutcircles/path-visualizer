@@ -51,7 +51,7 @@
 		const filter = hubContract.filters.HubTransfer();
 		const events = await hubContract.queryFilter(filter, fromBlock, toBlock);
 
-		const transfers: Transfer[] = await Promise.all(
+		const transfers = await Promise.all(
 			events.map(async (event) => {
 				const receipt = await provider.getTransactionReceipt(event.transactionHash);
 				const block = await provider.getBlock(event.blockNumber);
@@ -62,18 +62,38 @@
 						(log) => log.topics[0] === transferEventSignature
 					);
 
-					const logs = erc20Transfers
-						.map((log) => {
+					const logs = await Promise.all(
+						erc20Transfers.map(async (log) => {
 							try {
 								const parsedLog = tokenInterface.parseLog(log);
-								return parsedLog;
+								console.log('parsedLog:', parsedLog);
+								const tokenContract = new ethers.Contract(log.address, tokenAbi, provider);
+								const symbol = await tokenContract.symbol();
+								if (symbol === 'CRC') {
+									return { ...parsedLog, address: log.address };
+								}
+								return null;
 							} catch {
 								return null;
 							}
 						})
-						.filter((log) => log !== null) as LogDescription[];
+					);
+
+					const relevantLogs = logs.filter((log) => log !== null) as LogDescription[];
+
+					// If no relevant logs, skip this event
+					if (relevantLogs.length === 0) {
+						return null;
+					}
 
 					const { args } = event as ethers.EventLog;
+
+					// Filter out transactions from the address that is the 'to' address of the HubTransfer event
+					const filteredLogs = relevantLogs.filter((log) => log.args.from !== args?.to);
+
+					if (filteredLogs.length === 0) {
+						return null;
+					}
 
 					const [fromUser, toUser] = await Promise.all([
 						fetchUserData(args?.from),
@@ -85,35 +105,28 @@
 						to: args?.to,
 						amount: args?.amount,
 						transactionHash: event.transactionHash,
-						logs,
+						logs: filteredLogs,
 						fromUser,
 						toUser,
 						timestamp: block.timestamp,
 						transactionIndex: event.transactionIndex
-					};
+					} as Transfer;
 				} else {
-					return {
-						from: '',
-						to: '',
-						amount: 0,
-						transactionHash: event.transactionHash,
-						logs: [],
-						fromUser: { id: '', safeAddress: '', username: '', avatarUrl: DEFAULT_AVATAR },
-						toUser: { id: '', safeAddress: '', username: '', avatarUrl: DEFAULT_AVATAR },
-						timestamp: 0,
-						transactionIndex: 0
-					};
+					return null;
 				}
 			})
 		);
 
-		transfers.sort(
-			(a, b) =>
-				(b.timestamp || 0) - (a.timestamp || 0) ||
-				(b.transactionIndex || 0) - (a.transactionIndex || 0)
-		);
+		// Filter out null transactions and sort by timestamp and transactionIndex
+		const filteredTransfers = transfers
+			.filter((transfer): transfer is Transfer => transfer !== null)
+			.sort(
+				(a, b) =>
+					(b.timestamp || 0) - (a.timestamp || 0) ||
+					(b.transactionIndex || 0) - (a.transactionIndex || 0)
+			);
 
-		return transfers;
+		return filteredTransfers;
 	}
 
 	async function loadMoreTransactions() {
@@ -167,6 +180,7 @@
 	});
 
 	const handleGenerateChart = async (logs: LogDescription[]) => {
+		console.log('Generating chart from logs:', logs);
 		await generateChartFromLogs(logs);
 		pathVisualizerStore.update((state) => ({ ...state, isSidebarOpen: false }));
 	};

@@ -15,6 +15,13 @@ export interface SankeyLink {
   color?: string;
 }
 
+export interface TransferPathStep {
+  from: string;
+  to: string;
+  tokenOwner: string;
+  value: string;
+}
+
 export class SankeyChart {
   private pathfinder = new Pathfinder;
 
@@ -56,10 +63,11 @@ export class SankeyChart {
   }
 
   public async generateSankeyDataFromLogs(logs: any[]): Promise<{ nodes: SankeyNode[], links: SankeyLink[] }> {
-    const transfers = logs.map(log => ({
+    const transfers: TransferPathStep[] = logs.map(log => ({
       from: log.args[0],
       to: log.args[1],
-      value: log.args[2]
+      value: log.args[2],
+      tokenOwner: log.address, // The token address
     }));
 
     const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
@@ -72,7 +80,7 @@ export class SankeyChart {
       source: uniqueAddresses.indexOf(transfer.from),
       target: uniqueAddresses.indexOf(transfer.to),
       value: ethers.formatEther(transfer.value).toString(),
-      label: ''
+      label: namesDict[transfer.tokenOwner] || transfer.tokenOwner,
     }));
 
     return { nodes, links };
