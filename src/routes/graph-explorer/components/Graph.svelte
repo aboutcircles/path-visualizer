@@ -165,7 +165,9 @@
 						label: 'data(label)',
 						'line-color': '#d3d3d3',
 						'target-arrow-color': '#d3d3d3',
-						'target-arrow-shape': 'triangle',
+						'source-arrow-color': '#d3d3d3',
+						'target-arrow-shape': 'none',
+						'source-arrow-shape': 'triangle',
 						'curve-style': 'bezier',
 						'font-size': '8px',
 						'text-background-color': 'white',
@@ -330,7 +332,6 @@
 	}
 
 	export function generateGraph() {
-		console.log('Generating graph...');
 		cy.nodes().forEach((node) => {
 			const nodeId = node.id();
 			expandNode(nodeId, nodeList).catch(console.error);

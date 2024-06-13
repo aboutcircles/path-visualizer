@@ -11,7 +11,6 @@ export class CirclesAPI {
   private static BASE_URL: string = "/api/garden";
 
   public static async fetchUserData(addresses: string[]): Promise<UserData[]> {
-    console.log("Fetching user data for addresses:", addresses)
     try {
       const response = await axios.post<UserData[]>(`${CirclesAPI.BASE_URL}`, {
         type: 'fetchUserData',

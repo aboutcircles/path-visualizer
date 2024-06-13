@@ -66,7 +66,6 @@
 						erc20Transfers.map(async (log) => {
 							try {
 								const parsedLog = tokenInterface.parseLog(log);
-								console.log('parsedLog:', parsedLog);
 								const tokenContract = new ethers.Contract(log.address, tokenAbi, provider);
 								const symbol = await tokenContract.symbol();
 								if (symbol === 'CRC') {
@@ -180,7 +179,6 @@
 	});
 
 	const handleGenerateChart = async (logs: LogDescription[]) => {
-		console.log('Generating chart from logs:', logs);
 		await generateChartFromLogs(logs);
 		pathVisualizerStore.update((state) => ({ ...state, isSidebarOpen: false }));
 	};

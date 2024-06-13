@@ -32,7 +32,6 @@ export class DuneApi {
   private async fetchData(queryId: number, limit: number = 1000): Promise<any[]> {
     try {
       const response = await axios.get<DuneApiResponse>(`${this.baseUrl}?queryId=${queryId}&limit=${limit}`);
-      console.log("response.data", response.data);
       return response.data.result.rows;
     } catch (error) {
       console.error('Error fetching data:', error);

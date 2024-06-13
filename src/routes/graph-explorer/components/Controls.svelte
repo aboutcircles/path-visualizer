@@ -118,7 +118,6 @@
 						startingUserList = [];
 						addNodeAddress = '';
 						isExpandClicked.set(true);
-						console.log('Expand button clicked, store updated');
 					}}
 					class="bg-secondary-bg-light border-2 border-secondary-bg-light font-bold rounded-full text-white px-6 py-2 hover:bg-blue-700 transition duration-300 ease-in-out"
 				>

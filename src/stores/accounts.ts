@@ -172,7 +172,6 @@ export const createAccountsStore = (initialData: AccountData): Writable<AccountD
       });
     },
     reset: (data: AccountData): void => {
-      console.log('Resetting accounts store with data: ', data);
       set(JSON.parse(JSON.stringify(data))); // Ensure a deep copy of initialData is set
     }
   };

@@ -34,7 +34,6 @@
 		apiMethods.forEach(async (apiMethod, index) => {
 			try {
 				const data = await apiMethod();
-				console.log('Data:', data);
 				if (chartContainers[index]) {
 					initChart(data, index);
 				}

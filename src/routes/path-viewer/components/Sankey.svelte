@@ -19,7 +19,6 @@
 		const ethValue = pathVisualizerState.ethValue;
 		const weiValue = ethers.parseUnits(ethValue.toString(), 'ether').toString();
 		pathVisualizerStore.update((state) => ({ ...state, value: weiValue }));
-		console.log('weiValue:', weiValue); // Log the wei value
 	}
 
 	const handleSubmit = async (): Promise<void> => {
@@ -27,28 +26,20 @@
 		const weiValue = ethers.parseUnits(ethValue.toString(), 'ether').toString();
 		pathVisualizerStore.update((state) => ({ ...state, value: weiValue }));
 
-		console.log('Generate button pressed');
 		pathVisualizerStore.setIsLoading(true);
 		let sourceAddress = pathVisualizerState.fromAddress;
 		let sinkAddress = pathVisualizerState.toAddress;
 		const amount: string = pathVisualizerState.value;
 
-		console.log('Source address:', sourceAddress);
-		console.log('Sink address:', sinkAddress);
-		console.log('Amount (in wei):', amount);
-
 		if (!sourceAddress.startsWith('0x')) {
 			sourceAddress = (await CirclesAPI.resolveUsernameToAddress(sourceAddress)) || '';
-			console.log('Resolved source address:', sourceAddress);
 		}
 		if (!sinkAddress.startsWith('0x')) {
 			sinkAddress = (await CirclesAPI.resolveUsernameToAddress(sinkAddress)) || '';
-			console.log('Resolved sink address:', sinkAddress);
 		}
 
 		try {
 			const sankeyData = await sankeyChart.generateSankeyData(sourceAddress, sinkAddress, amount);
-			console.log('Sankey data generated:', sankeyData);
 			pathVisualizerStore.setChartData(sankeyData);
 			pathVisualizerStore.setIsUserSelectOpen(false);
 			pathVisualizerStore.setIsLoading(false);
@@ -59,7 +50,6 @@
 	};
 
 	const resetForm = (): void => {
-		console.log('Reset button pressed');
 		pathVisualizerStore.update((state) => ({
 			...state,
 			fromAddress: '',
@@ -78,7 +68,6 @@
 	const generateChartFromLogs = async (logs: any[]): Promise<void> => {
 		try {
 			const sankeyData = await sankeyChart.generateSankeyDataFromLogs(logs);
-			console.log('Sankey data from logs generated:', sankeyData);
 			pathVisualizerStore.setChartData(sankeyData);
 			pathVisualizerStore.setIsContentOpen(false);
 		} catch (error) {

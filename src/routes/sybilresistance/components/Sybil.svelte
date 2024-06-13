@@ -39,7 +39,7 @@
 	const steps = {
 		0: {
 			title: '',
-			description: "This is Alice. Alice just signed up to Circles.",
+			description: 'This is Alice. Alice just signed up to Circles.',
 			buttonText: 'Next'
 		},
 		1: {
@@ -54,7 +54,7 @@
 		},
 		3: {
 			title: "The shop can only receive Alice's personal CRC.",
-			description: "",
+			description: '',
 			buttonText: 'Next'
 		},
 		4: {
@@ -158,7 +158,6 @@
 	}
 
 	function nextStep() {
-		console.log(`Moving to next step from currentStep ${currentStep}`);
 		switch (currentStep) {
 			case 1:
 				if (errorMessage) {
@@ -185,8 +184,6 @@
 				}
 				graphData = transformAccountsToGraphData(get(accountsStore), currentStep === 0);
 				graphKey += 1;
-				console.log(`Updated currentStep: ${currentStep}`);
-				console.log(`graphData: ${JSON.stringify(graphData)}`);
 				break;
 		}
 	}
@@ -338,7 +335,6 @@
 		graphKey += 1;
 		graphData = transformAccountsToGraphData(get(accountsStore));
 		currentStep += 1;
-		console.log(`Fake accounts added. Updated currentStep: ${currentStep}`);
 	}
 
 	function sendAllFakeCrcToAlice() {
@@ -377,8 +373,7 @@
 
 			graphKey += 1;
 			graphData = transformAccountsToGraphData(get(accountsStore));
-			currentStep += 1; // Move to the next step after sending balances
-			console.log(`All fake CRC sent to Alice. Updated currentStep: ${currentStep}`);
+			currentStep += 1;
 		} catch (error) {
 			errorMessage = (error as Error).message;
 		}

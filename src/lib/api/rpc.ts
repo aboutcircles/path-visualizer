@@ -25,8 +25,6 @@ export class RpcApi {
       id: 1,
     };
 
-    console.log('Request body:', requestBody)
-
     try {
       const response = await fetch(this.rpcUrl, {
         method: 'POST',
@@ -41,7 +39,6 @@ export class RpcApi {
       }
 
       const data: JsonRpcResponse = await response.json();
-      console.log('Response:', data);
       return data;
     } catch (error) {
       if (error instanceof Error) {

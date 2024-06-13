@@ -16,10 +16,6 @@
 	$: {
 		const { fromUsername, toUsername, ethValue } = pathVisualizerState;
 		isGenerateDisabled = !fromUsername || !toUsername || ethValue === 0;
-		console.log('isGenerateDisabled:', isGenerateDisabled);
-		console.log('fromUsername:', fromUsername);
-		console.log('toUsername:', toUsername);
-		console.log('ethValue:', ethValue);
 	}
 
 	onDestroy(() => {

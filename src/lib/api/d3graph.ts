@@ -54,19 +54,13 @@ export class D3Graph {
 		try {
 			const trustRelations: JsonRpcResponse = await this.rpcApi.getTrustRelations(nodeAddress);
 
-			console.log("trustrelations", trustRelations);
-
-			// Collect unique addresses from trusts and trustedBy
 			const addresses: string[] = [];
 			trustRelations.result.trusts.forEach(entry => addresses.push(entry.user.toLowerCase()));
 			trustRelations.result.trustedBy.forEach(entry => addresses.push(entry.user.toLowerCase()));
 
-			// Ensure the nodeAddress is included
 			if (!addresses.includes(nodeAddress)) {
 				addresses.push(nodeAddress);
 			}
-
-			console.log("Addresses", addresses);
 
 			// Fetch user data for these addresses
 			const userData: UserData[] = await CirclesAPI.fetchUserData(addresses);

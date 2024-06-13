@@ -10,9 +10,6 @@
 		pathVisualizerState = value;
 	});
 
-	$: console.log('isSidebarOpen in Sidebar:', pathVisualizerState.isSidebarOpen);
-
-	// Function to close the sidebar when clicking outside of it
 	const handleClickOutside = (event: MouseEvent) => {
 		if (typeof document !== 'undefined') {
 			const sidebarElement = document.getElementById('sidebar');
