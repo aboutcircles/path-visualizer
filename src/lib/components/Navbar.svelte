@@ -11,6 +11,7 @@
 		{ href: '/graph-explorer', text: 'Trust Graph Explorer' },
 		{ href: '/path-viewer', text: 'Transaction Visualizer' },
 		{ href: '/sybilresistance', text: 'Sybil Resistance' },
+		{ href: '/demurrage', text: 'Demurrage' },
 		{ href: '/analytics', text: 'Circles Network Stats' }
 	];
 </script>
