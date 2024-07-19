@@ -56,12 +56,14 @@
 				id="ethValue"
 				type="range"
 				min="0"
-				max="10000"
+				max="100000"
 				step="1"
 				bind:value={pathVisualizerState.ethValue}
 				class="mt-1 block w-full bg-gray-50"
 			/>
-			<div class="text-xs text-gray-700 mt-1">Circles: {pathVisualizerState.ethValue}</div>
+			<div class="text-xs text-gray-700 mt-1">
+				Circles: {pathVisualizerState.ethValue}
+			</div>
 		</div>
 		<div class="flex space-x-2">
 			<button

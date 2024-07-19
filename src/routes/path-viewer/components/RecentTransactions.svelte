@@ -4,13 +4,23 @@
 		type PathVisualizerState,
 		type Transfer
 	} from '../../../stores/pathVisualizer';
-	import { ethers, type LogDescription } from 'ethers';
 	import hubAbi from '$lib/abis/Hub.json';
-	import tokenAbi from '$lib/abis/Token.json';
 	import { CirclesAPI, type UserData } from '$lib/api/gardenApi';
 	import { onDestroy, onMount, afterUpdate } from 'svelte';
+	import {
+		CirclesData,
+		CirclesQuery,
+		CirclesRpc,
+		type PagedQueryParams,
+		type TransactionHistoryRow
+	} from '@circles-sdk/data';
+	import { ethers, type LogDescription } from 'ethers';
+	import { crcToTc } from '@circles/timecircles';
 
 	export let generateChartFromLogs;
+
+	const circlesRpc = new CirclesRpc('https://rpc.helsinki.aboutcircles.com');
+	const circlesData = new CirclesData(circlesRpc);
 
 	let pathVisualizerState: PathVisualizerState;
 	const unsubscribe = pathVisualizerStore.subscribe((value) => {
@@ -18,16 +28,13 @@
 	});
 
 	const DEFAULT_AVATAR = '/default.png';
-	const BLOCK_STEP = 10000; // Number of blocks to scan in each batch
-	let fromBlock: number;
-	let toBlock: number;
 	let loading = false;
 	let transactions: Transfer[] = [];
 	let loadMoreTrigger: HTMLElement;
 	let observer: IntersectionObserver;
 
 	function truncateAddress(address: string): string {
-		return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+		return `${address.substring(0, 3)}...${address.substring(address.length - 3)}`;
 	}
 
 	async function fetchUserData(address: string): Promise<UserData> {
@@ -42,103 +49,57 @@
 		);
 	}
 
-	async function getRecentTransactions(fromBlock: number, toBlock: number): Promise<Transfer[]> {
-		const provider = new ethers.JsonRpcProvider('https://rpc.helsinki.aboutcircles.com');
-		const contractAddress = '0x29b9a7fBb8995b2423a71cC17cf9810798F6C543';
-		const hubContract = new ethers.Contract(contractAddress, hubAbi, provider);
-		const tokenInterface = new ethers.Interface(tokenAbi);
+	const hubTransferQueryParams: PagedQueryParams = {
+		namespace: 'CrcV1',
+		table: 'HubTransfer',
+		columns: [
+			'blockNumber',
+			'transactionIndex',
+			'logIndex',
+			'from',
+			'to',
+			'amount',
+			'transactionHash',
+			'timestamp'
+		],
+		sortOrder: 'DESC',
+		limit: 10
+	};
 
-		const filter = hubContract.filters.HubTransfer();
-		const events = await hubContract.queryFilter(filter, fromBlock, toBlock);
-
-		const transfers = await Promise.all(
-			events.map(async (event) => {
-				const receipt = await provider.getTransactionReceipt(event.transactionHash);
-				const block = await provider.getBlock(event.blockNumber);
-
-				if (receipt && block) {
-					const transferEventSignature = ethers.id('Transfer(address,address,uint256)');
-					const erc20Transfers = receipt.logs.filter(
-						(log) => log.topics[0] === transferEventSignature
-					);
-
-					const logs = await Promise.all(
-						erc20Transfers.map(async (log) => {
-							try {
-								const parsedLog = tokenInterface.parseLog(log);
-								const tokenContract = new ethers.Contract(log.address, tokenAbi, provider);
-								const symbol = await tokenContract.symbol();
-								if (symbol === 'CRC') {
-									return { ...parsedLog, address: log.address };
-								}
-								return null;
-							} catch {
-								return null;
-							}
-						})
-					);
-
-					const relevantLogs = logs.filter((log) => log !== null) as LogDescription[];
-
-					// If no relevant logs, skip this event
-					if (relevantLogs.length === 0) {
-						return null;
-					}
-
-					const { args } = event as ethers.EventLog;
-
-					// Filter out transactions from the address that is the 'to' address of the HubTransfer event
-					const filteredLogs = relevantLogs.filter((log) => log.args.from !== args?.to);
-
-					if (filteredLogs.length === 0) {
-						return null;
-					}
-
-					const [fromUser, toUser] = await Promise.all([
-						fetchUserData(args?.from),
-						fetchUserData(args?.to)
-					]);
-
-					return {
-						from: args?.from,
-						to: args?.to,
-						amount: args?.amount,
-						transactionHash: event.transactionHash,
-						logs: filteredLogs,
-						fromUser,
-						toUser,
-						timestamp: block.timestamp,
-						transactionIndex: event.transactionIndex
-					} as Transfer;
-				} else {
-					return null;
-				}
-			})
-		);
-
-		// Filter out null transactions and sort by timestamp and transactionIndex
-		const filteredTransfers = transfers
-			.filter((transfer): transfer is Transfer => transfer !== null)
-			.sort(
-				(a, b) =>
-					(b.timestamp || 0) - (a.timestamp || 0) ||
-					(b.transactionIndex || 0) - (a.transactionIndex || 0)
-			);
-
-		return filteredTransfers;
-	}
+	const query = new CirclesQuery<any>(circlesRpc, hubTransferQueryParams);
 
 	async function loadMoreTransactions() {
 		if (loading) return;
 		loading = true;
 
-		const newToBlock = fromBlock - 1;
-		const newFromBlock = Math.max(newToBlock - BLOCK_STEP, 0); // Ensuring fromBlock is non-negative
-		const newTransactions = await getRecentTransactions(newFromBlock, newToBlock);
+		const hasResults = await query.queryNextPage();
+		if (!hasResults) {
+			console.log('The query yielded no results.');
+			loading = false;
+			return;
+		}
 
-		fromBlock = newFromBlock;
+		const newTransactions = await Promise.all(
+			query.currentPage.results.map(async (result) => {
+				const fromUser = await fetchUserData(result.from);
+				const toUser = await fetchUserData(result.to);
+
+				return {
+					from: result.from,
+					to: result.to,
+					amount: result.amount,
+					transactionHash: result.transactionHash,
+					fromUser,
+					toUser,
+					timestamp: result.timestamp,
+					transactionIndex: result.transactionIndex,
+					logs: [] // Assuming logs are handled separately if necessary
+				} as Transfer;
+			})
+		);
 
 		transactions = [...transactions, ...newTransactions];
+
 		pathVisualizerStore.update((state) => ({
 			...state,
 			transactions
@@ -153,9 +114,6 @@
 	}
 
 	onMount(async () => {
-		const provider = new ethers.JsonRpcProvider('https://rpc.helsinki.aboutcircles.com');
-		toBlock = await provider.getBlockNumber();
-		fromBlock = toBlock - BLOCK_STEP;
 		await loadMoreTransactions();
 
 		observer = new IntersectionObserver((entries) => {
@@ -178,8 +136,47 @@
 		}
 	});
 
-	const handleGenerateChart = async (logs: LogDescription[]) => {
-		await generateChartFromLogs(logs);
+	const getTransferDetailsQueryParams = (transactionHash: string): PagedQueryParams => ({
+		namespace: 'CrcV1',
+		table: 'Transfer',
+		columns: [
+			'blockNumber',
+			'transactionIndex',
+			'logIndex',
+			'from',
+			'to',
+			'amount',
+			'transactionHash',
+			'timestamp',
+			'tokenAddress'
+		],
+		filter: [
+			{
+				Type: 'FilterPredicate',
+				FilterType: 'Equals',
+				Column: 'transactionHash',
+				Value: transactionHash
+			}
+		],
+		sortOrder: 'DESC',
+		limit: 1000
+	});
+
+	const handleGenerateChart = async (transactionHash: string) => {
+		// Fetch logs using CirclesQuery
+		const params = getTransferDetailsQueryParams(transactionHash);
+		const query = new CirclesQuery<any>(circlesRpc, params);
+		const hasResults = await query.queryNextPage();
+
+		if (hasResults) {
+			const eventLogs = query.currentPage.results;
+
+			// Assuming the logs are in the expected format for generateChartFromLogs
+			await generateChartFromLogs(eventLogs);
+		} else {
+			console.log('No event logs found for transaction hash:', transactionHash);
+		}
+
 		pathVisualizerStore.update((state) => ({ ...state, isSidebarOpen: false }));
 	};
 
@@ -194,47 +191,59 @@
 <div class="bg-white h-full rounded-xl overflow-auto">
 	<ul class="mb-6">
 		{#each pathVisualizerState.transactions as transaction (transaction.transactionHash)}
-			<li class="border rounded-xl m-2 shadow">
+			<li class="border rounded-xl m-2 shadow p-2">
 				<div>
-					From:
-					<img
-						src={transaction.fromUser?.avatarUrl || DEFAULT_AVATAR}
-						alt={transaction.fromUser?.username || 'Unknown User'}
-						class="w-6 h-6 rounded-full inline-block"
-					/>
-					{transaction.fromUser?.username || truncateAddress(transaction.from)}
+					{crcToTc(Date.now(), Number(ethers.formatEther(transaction.amount))).toFixed(2)} Circles
 				</div>
-				<div>
-					To:
-					<img
-						src={transaction.toUser?.avatarUrl || DEFAULT_AVATAR}
-						alt={transaction.toUser?.username || 'Unknown User'}
-						class="w-6 h-6 rounded-full inline-block"
-					/>
-					{transaction.toUser?.username || truncateAddress(transaction.to)}
-				</div>
-				<div>Amount: {Number(ethers.formatEther(transaction.amount)).toFixed(2)} CRC</div>
-				<div>
-					TxHash:
-					<a
-						href={`https://gnosisscan.io/tx/${transaction.transactionHash}`}
-						target="_blank"
-						class="text-blue-500 hover:underline"
+				<div class="flex items-center">
+					<div class="flex items-center">
+						<img
+							src={transaction.fromUser?.avatarUrl || DEFAULT_AVATAR}
+							alt={transaction.fromUser?.username || 'Unknown User'}
+							class="w-6 h-6 rounded-full inline-block"
+						/>
+						{transaction.fromUser?.username || truncateAddress(transaction.from)}
+					</div>
+					<svg
+						class="w-4 h-4 mx-2"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
 					>
-						{transaction.transactionHash.substring(0, 10)}...
-					</a>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"
+						></path>
+					</svg>
+					<div class="flex items-center">
+						<img
+							src={transaction.toUser?.avatarUrl || DEFAULT_AVATAR}
+							alt={transaction.toUser?.username || 'Unknown User'}
+							class="w-6 h-6 rounded-full inline-block"
+						/>
+						{transaction.toUser?.username || truncateAddress(transaction.to)}
+					</div>
 				</div>
+
 				<div>
-					Timestamp: {transaction.timestamp
-						? new Date(transaction.timestamp * 1000).toLocaleString()
-						: 'N/A'}
+					{transaction.timestamp ? new Date(transaction.timestamp * 1000).toLocaleString() : 'N/A'}
 				</div>
-				<button
-					on:click={() => handleGenerateChart(transaction.logs)}
-					class="mt-2 bg-blue-500 text-white px-2 py-1 rounded"
-				>
-					Generate Chart
-				</button>
+				<div class="flex space-x-2">
+					<button
+						on:click={() => handleGenerateChart(transaction.transactionHash)}
+						class="w-36 mt-2 bg-blue-500 text-white px-2 py-1 rounded-xl text-center hover:bg-blue-600"
+					>
+						Show Flow
+					</button>
+					<button
+						on:click={() => {
+							window.open(`https://gnosisscan.io/tx/${transaction.transactionHash}`, '_blank');
+							handleGenerateChart(transaction.transactionHash);
+						}}
+						class="w-36 mt-2 bg-white text-blue-500 border border-blue-500 px-2 py-1 rounded-xl text-center hover:bg-gray-100"
+					>
+						Open in Blockexplorer
+					</button>
+				</div>
 			</li>
 		{/each}
 		<!-- Invisible element to trigger loading more transactions -->

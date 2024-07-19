@@ -51,6 +51,9 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@circles-sdk/data": "^0.4.0",
+		"@circles-sdk/sdk": "^0.4.0",
+		"@circles/timecircles": "^1.0.6",
 		"@duneanalytics/client-sdk": "^0.1.4",
 		"axios": "^1.6.8",
 		"chart.js": "^4.4.2",

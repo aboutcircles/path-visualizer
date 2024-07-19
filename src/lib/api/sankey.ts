@@ -1,6 +1,7 @@
 import { CirclesAPI, type UserData } from "./gardenApi";
 import { Pathfinder } from "./pathfinder";
 import { ethers } from "ethers";
+import { crcToTc } from "@circles/timecircles";
 
 export interface SankeyNode {
   name: string;
@@ -46,7 +47,7 @@ export class SankeyChart {
     const pathData = await this.pathfinder.getArgsForPath(sourceAddress, sinkAddress, amount);
     const transfers = pathData.transfers || [];
 
-    const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
+    const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to, transfer.tokenOwner]));
     const uniqueAddresses = Array.from(addressSet);
 
     const namesDict = await this.getNames(uniqueAddresses);
@@ -55,7 +56,7 @@ export class SankeyChart {
     const links: SankeyLink[] = transfers.map(transfer => ({
       source: uniqueAddresses.indexOf(transfer.from),
       target: uniqueAddresses.indexOf(transfer.to),
-      value: (ethers.formatEther(transfer.value)).toString(),
+      value: crcToTc(Date.now(), Number(ethers.formatEther(transfer.value))).toString(),
       label: namesDict[transfer.tokenOwner] || transfer.tokenOwner,
     }));
 
@@ -63,23 +64,28 @@ export class SankeyChart {
   }
 
   public async generateSankeyDataFromLogs(logs: any[]): Promise<{ nodes: SankeyNode[], links: SankeyLink[] }> {
+
+
+
     const transfers: TransferPathStep[] = logs.map(log => ({
-      from: log.args[0],
-      to: log.args[1],
-      value: log.args[2],
-      tokenOwner: log.address, // The token address
+      from: ethers.getAddress(log.from),
+      to: ethers.getAddress(log.to),
+      value: log.amount,
+      tokenOwner: ethers.getAddress(log.tokenAddress),
     }));
 
-    const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to]));
+    const addressSet = new Set(transfers.flatMap(transfer => [transfer.from, transfer.to, transfer.tokenOwner]));
     const uniqueAddresses = Array.from(addressSet);
 
     const namesDict = await this.getNames(uniqueAddresses);
+
+
 
     const nodes: SankeyNode[] = uniqueAddresses.map(address => ({ name: namesDict[address] }));
     const links: SankeyLink[] = transfers.map(transfer => ({
       source: uniqueAddresses.indexOf(transfer.from),
       target: uniqueAddresses.indexOf(transfer.to),
-      value: ethers.formatEther(transfer.value).toString(),
+      value: crcToTc(Date.now(), Number(ethers.formatEther(transfer.value))).toString(),
       label: namesDict[transfer.tokenOwner] || transfer.tokenOwner,
     }));
 

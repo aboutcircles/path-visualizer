@@ -64,8 +64,8 @@
 						value: adjustedLinks.map((link: any) => link.value),
 						label: adjustedLinks.map((link: any) =>
 							link.label?.startsWith('0x')
-								? truncateAddress(link.label) + ' CRC'
-								: link.label + ' CRC'
+								? truncateAddress(link.label) + ' Circles'
+								: link.label + ' Circles'
 						),
 						color: adjustedLinks.map((link: any) => link.color || 'grey'),
 						texttemplate: '%{label}',

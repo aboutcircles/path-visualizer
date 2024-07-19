@@ -7,6 +7,8 @@
 	import { SankeyChart } from '../../../lib/api/sankey';
 	import { ethers } from 'ethers';
 	import { CirclesAPI } from '$lib/api/gardenApi';
+	import { crcToTc, tcToCrc } from '@circles/timecircles';
+	import path from 'path';
 
 	let sankeyChart = new SankeyChart();
 
@@ -22,7 +24,8 @@
 	}
 
 	const handleSubmit = async (): Promise<void> => {
-		const ethValue = pathVisualizerState.ethValue;
+		const ethValue = tcToCrc(Date.now(), pathVisualizerState.ethValue);
+		// const ethValue = pathVisualizerState.ethValue;
 		const weiValue = ethers.parseUnits(ethValue.toString(), 'ether').toString();
 		pathVisualizerStore.update((state) => ({ ...state, value: weiValue }));
 
