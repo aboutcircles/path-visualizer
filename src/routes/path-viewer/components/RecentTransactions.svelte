@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
 	import {
 		pathVisualizerStore,
 		type PathVisualizerState,
@@ -219,7 +220,7 @@
 <div class="bg-white h-full rounded-xl overflow-auto">
 	<ul class="mb-6">
 		{#each pathVisualizerState.transactions as transaction (transaction.transactionHash)}
-			<li class="border rounded-xl m-2 shadow p-2">
+			<li class="border rounded-xl m-2 shadow p-2" in:fade={{ duration: 800 }}>
 				<div>
 					{crcToTc(Date.now(), Number(ethers.formatEther(transaction.amount))).toFixed(2)} Circles
 				</div>
@@ -230,7 +231,9 @@
 							alt={transaction.fromUser?.username || 'Unknown User'}
 							class="w-6 h-6 rounded-full inline-block"
 						/>
-						{transaction.fromUser?.username || truncateAddress(transaction.from)}
+						<p class="pl-2">
+							{transaction.fromUser?.username || truncateAddress(transaction.from)}
+						</p>
 					</div>
 					<svg
 						class="w-4 h-4 mx-2"
@@ -248,7 +251,9 @@
 							alt={transaction.toUser?.username || 'Unknown User'}
 							class="w-6 h-6 rounded-full inline-block"
 						/>
-						{transaction.toUser?.username || truncateAddress(transaction.to)}
+						<p class="pl-2">
+							{transaction.toUser?.username || truncateAddress(transaction.to)}
+						</p>
 					</div>
 				</div>
 
