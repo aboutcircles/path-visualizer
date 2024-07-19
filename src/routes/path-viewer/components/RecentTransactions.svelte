@@ -113,7 +113,35 @@
 		}
 	}
 
+	async function handleNewEvent(event) {
+		if (event.$event === 'CrcV1_HubTransfer') {
+			const fromUser = await fetchUserData(event.from);
+			const toUser = await fetchUserData(event.to);
+
+			const newTransaction = {
+				from: event.from,
+				to: event.to,
+				amount: event.amount.toString(),
+				transactionHash: event.transactionHash,
+				fromUser,
+				toUser,
+				timestamp: event.timestamp,
+				transactionIndex: event.transactionIndex,
+				logs: [] // Assuming logs are handled separately if necessary
+			} as Transfer;
+
+			transactions = [newTransaction, ...transactions];
+			pathVisualizerStore.update((state) => ({
+				...state,
+				transactions
+			}));
+		}
+	}
+
 	onMount(async () => {
+		const circlesEvents = await circlesData.subscribeToEvents(); // Subscribe to Circles events
+
+		circlesEvents.subscribe(handleNewEvent);
 		await loadMoreTransactions();
 
 		observer = new IntersectionObserver((entries) => {
