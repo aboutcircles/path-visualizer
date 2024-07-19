@@ -56,7 +56,7 @@
 				id="ethValue"
 				type="range"
 				min="0"
-				max="100000"
+				max="10000"
 				step="1"
 				bind:value={pathVisualizerState.ethValue}
 				class="mt-1 block w-full bg-gray-50"
